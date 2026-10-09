@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Lo-fi 房间电台 · 图标：一盏亮着的台灯 -->
+  <rect width="32" height="32" rx="7" fill="#16131f" />
+  <path d="M16 5l7 8H9l7-8z" fill="#f7c873" />
+  <rect x="14.6" y="13" width="2.8" height="11" rx="1.2" fill="#f4eee7" />
+  <rect x="10" y="24" width="12" height="2.6" rx="1.3" fill="#e78aa6" />
+  <circle cx="16" cy="10.5" r="1.6" fill="#16131f" opacity="0.55" />
+</svg>

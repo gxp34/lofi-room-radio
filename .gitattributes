@@ -1,0 +1,33 @@
+# 换行符统一策略
+#
+# 为什么需要这个：
+#   开发在 Windows（默认 CRLF），部署在 Vercel 的 Linux（LF）。
+#   不统一的话，同一份文件在两边会显示成「被改过」，diff 全是噪音；
+#   更糟的是 .sh / .py 这类脚本被 checkout 成 CRLF 之后在 Linux 上直接跑不了。
+#
+# 规则：仓库里一律存 LF，检出到工作区也保持 LF。
+* text=auto eol=lf
+
+# 二进制文件不做任何换行符转换（否则图片 / 音频会被改坏）
+*.wav   binary
+*.mp3   binary
+*.m4a   binary
+*.aac   binary
+*.ogg   binary
+*.flac  binary
+*.webm  binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.avif  binary
+*.gif   binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.pdf   binary
+
+# lockfile 交给 Git 当成文本合并（出冲突时能看懂）
+pnpm-lock.yaml merge=union

@@ -1,0 +1,240 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Lo-fi 房间电台 · 全局样式
+   色板见 tailwind.config.ts；这里只放 CSS 变量与少量氛围工具类。
+   ========================================================================== */
+
+@layer base {
+  :root {
+    /* 深夜蓝紫 #16131f */
+    --background: 255 24% 10%;
+    /* 正文米白 #f4eee7 */
+    --foreground: 32 37% 93%;
+
+    /* 房间暗部 #2b2230 */
+    --card: 279 17% 16%;
+    --card-foreground: 32 37% 93%;
+
+    --popover: 279 20% 13%;
+    --popover-foreground: 32 37% 93%;
+
+    /* 台灯暖黄 #f7c873 */
+    --primary: 39 89% 71%;
+    --primary-foreground: 255 24% 10%;
+
+    /* 房间暗部做次级色 */
+    --secondary: 279 17% 20%;
+    --secondary-foreground: 32 37% 93%;
+
+    --muted: 279 15% 19%;
+    /* 次要灰紫 #9b8fa3 */
+    --muted-foreground: 276 10% 62%;
+
+    /* 霓虹粉 #e78aa6 */
+    --accent: 342 66% 72%;
+    --accent-foreground: 255 24% 10%;
+
+    --destructive: 0 62% 52%;
+    --destructive-foreground: 32 37% 96%;
+
+    --border: 279 15% 24%;
+    --input: 279 15% 24%;
+    --ring: 39 89% 71%;
+
+    --radius: 0.75rem;
+
+    /* 雨夜青 #7fc8d8，给自定义组件用 */
+    --rain: 191 51% 67%;
+
+    /* ===== 字体 =====
+       默认全部走系统自带字体：离线也能跑，中文绝不缺字。
+       想换成 Space Mono / VT323 / 霞鹜文楷，见 docs/字体与素材.md，
+       改这两行即可（或者用 next/font 把同名变量挂到 <html> 上覆盖）。 */
+    --font-display: ui-monospace, SFMono-Regular, 'Space Mono', Menlo, Consolas,
+      'Courier New', 'PingFang SC', 'Microsoft YaHei', monospace;
+    --font-body: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+      'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* 平滑滚动；尊重 reduced-motion 时会在下面关掉 */
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-night text-paper font-sans antialiased;
+    /* 房间底色：右上角台灯暖光 + 底部暗角 */
+    background-image:
+      radial-gradient(60% 55% at 78% 8%, rgba(247, 200, 115, 0.16) 0%, rgba(247, 200, 115, 0.05) 42%, transparent 74%),
+      radial-gradient(90% 70% at 12% 100%, rgba(127, 200, 216, 0.07) 0%, transparent 60%),
+      linear-gradient(180deg, #16131f 0%, #14111c 60%, #100e17 100%);
+    background-attachment: fixed;
+    min-height: 100dvh;
+  }
+
+  /* 选中文字用台灯色，像用荧光笔划过去 */
+  ::selection {
+    background: rgba(247, 200, 115, 0.28);
+    color: #f4eee7;
+  }
+
+  /* 键盘可达性：任何可聚焦元素都有清楚的焦点环 */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* 细长滚动条，别破坏夜里看屏幕的感觉 */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(22, 19, 31, 0.6);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(155, 143, 163, 0.32);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(247, 200, 115, 0.45);
+    background-clip: content-box;
+  }
+
+  /* 深色输入框里的自动填充不要变白 */
+  input:-webkit-autofill,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #f4eee7;
+    -webkit-box-shadow: 0 0 0 1000px #241d2b inset;
+    transition: background-color 9999s ease-in-out 0s;
+  }
+}
+
+@layer components {
+  /* 玻璃/雾气质感卡片，房间里的家具用它 */
+  .room-card {
+    @apply rounded-xl border border-white/5 bg-room/60 backdrop-blur-sm shadow-inset;
+  }
+
+  /* 纸张质感：日记本、便签 */
+  .paper {
+    background-color: #efe7db;
+    background-image:
+      radial-gradient(rgba(0, 0, 0, 0.035) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(0, 0, 0, 0.03), transparent 30%);
+    background-size: 6px 6px, 100% 100%;
+    color: #2b2230;
+  }
+
+  /* 老屏幕 / 掌机屏的扫描线 */
+  .scanlines::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.16) 0px,
+      rgba(0, 0, 0, 0.16) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    mix-blend-mode: multiply;
+  }
+
+  /* 台灯光晕 */
+  .lamp-glow {
+    box-shadow:
+      0 0 80px -20px rgba(247, 200, 115, 0.55),
+      0 0 200px -60px rgba(247, 200, 115, 0.35);
+  }
+
+  /* 树洞/抽屉的木质纹理（纯 CSS 条纹，不依赖图片） */
+  .wood {
+    background-image: repeating-linear-gradient(
+      92deg,
+      #3a2b23 0px,
+      #3a2b23 3px,
+      #42312625 3px,
+      #423126 6px
+    );
+  }
+
+  /* 正文排版：日记阅读体验 */
+  .prose-diary {
+    @apply text-[15px] leading-[1.9] text-paper/90;
+  }
+  .prose-diary p {
+    @apply my-4;
+  }
+  .prose-diary h2 {
+    @apply mt-8 mb-3 font-display text-lg text-lamp;
+  }
+  .prose-diary blockquote {
+    @apply my-5 border-l-2 border-lamp/40 pl-4 text-dust;
+  }
+}
+
+@layer utilities {
+  /* 屏幕阅读器专用文本 */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* ==========================================================================
+   动效降级：系统开了「减少动态效果」就把雨、旋转、呼吸全部停掉
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* 雨层直接隐藏，避免静态密密麻麻的线看起来像脏点 */
+  .rain-layer {
+    display: none !important;
+  }
+}
+
+/* 关灯模式：房间整体压暗（首页「关灯」事件用） */
+html[data-lights='off'] body {
+  filter: brightness(0.42) saturate(0.85);
+  transition: filter 600ms ease;
+}
+
+html[data-lights='moon'] body {
+  filter: hue-rotate(190deg) saturate(0.75) brightness(0.9);
+  transition: filter 900ms ease;
+}

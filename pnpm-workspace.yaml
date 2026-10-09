@@ -1,0 +1,15 @@
+# pnpm 10/11 的配置（package.json 里的 "pnpm" 字段已不再被读取）
+#
+# nodeLinker: hoisted
+#   用扁平的 node_modules 布局（真实文件，不是符号链接）。
+#   好处：npm / pnpm / yarn 都能直接用；某些文件系统不解析符号链接时也不会炸。
+nodeLinker: hoisted
+
+# allowBuilds 里显式写出来的依赖，pnpm 才知道该不该放行它的安装脚本；
+# 没写会直接报 ERR_PNPM_IGNORED_BUILDS 并中断安装。
+#
+# 这里选 false（跳过脚本）：unrs-resolver 是给 eslint 解析模块路径用的，
+# 自带各平台预编译二进制，跳过不影响 next dev / next build / next lint。
+# 如果 lint 报原生模块缺失，把它改成 true 再重装即可。
+allowBuilds:
+  unrs-resolver: false

@@ -1,0 +1,39 @@
+# 依赖
+/node_modules
+/.pnpm-store
+/.npm-cache
+
+# Next.js
+/.next/
+/out/
+/build
+next-env.d.ts
+
+# 生产环境
+/coverage
+
+# 环境变量（绝对不要提交）
+.env
+.env*.local
+.env.production
+
+# 编辑器 / 系统
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
+*.pem
+*.tsbuildinfo
+
+# Vercel
+.vercel
+
+# 本地截图（scripts/shot.mjs 的输出）
+/.shots
+
+# 日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
