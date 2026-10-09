@@ -177,11 +177,16 @@ try {
   const send = createClient(ws)
   await send('Page.enable')
   await send('Runtime.enable')
+  // 视口可以用环境变量覆盖，方便测窄屏：
+  //   HIT_WIDTH=390 node scripts/hittest.mjs
+  // 之前宽度写死 1400，手机上的命中问题一直测不到。
+  const viewportWidth = Number(process.env.HIT_WIDTH ?? 1400)
+  const viewportHeight = Number(process.env.HIT_HEIGHT ?? 900)
   await send('Emulation.setDeviceMetricsOverride', {
-    width: 1400,
-    height: 900,
+    width: viewportWidth,
+    height: viewportHeight,
     deviceScaleFactor: 1,
-    mobile: false,
+    mobile: viewportWidth <= 640,
   })
 
   await send('Page.navigate', { url: URL_TO_OPEN })

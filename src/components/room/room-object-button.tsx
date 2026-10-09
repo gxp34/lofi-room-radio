@@ -3,7 +3,7 @@
 import * as React from 'react'
 
 import { Icon } from '@/components/icon'
-import { ART_SIZE, HIT_PAD, ObjectArt, hasArt } from '@/components/room/room-props'
+import { ART_SIZE, HIT_PAD, ObjectArt, hasArt, scalable } from '@/components/room/room-props'
 import { useRoomObject } from '@/components/room/use-room-object'
 import { cn } from '@/lib/utils'
 import { usePlayerStore } from '@/stores/player-store'
@@ -66,12 +66,19 @@ export function RoomObjectButton({
         {/* 透明的点击加宽区。
             图形的“看不见的留白”不算点击区，所以要让一个透明块把这块补上 ——
             它比按钮本体大，靠 overflow 可见的子孙元素依然能收到点击，
-            事件冒泡上来还是这颗按钮。 */}
+            事件冒泡上来还是这颗按钮。
+            尺寸也跟着房间缩放：写死 px 的话，手机上加宽区会大过物件本身，
+            把旁边的东西的点击抢走。 */}
         {hitPad > 0 && (
           <span
             aria-hidden
             className="absolute"
-            style={{ top: -hitPad, right: -hitPad, bottom: -hitPad, left: -hitPad }}
+            style={{
+              top: scalable(-hitPad),
+              right: scalable(-hitPad),
+              bottom: scalable(-hitPad),
+              left: scalable(-hitPad),
+            }}
           />
         )}
         {/* 东西本身：优先用手绘图形，没有的话退回 emoji */}
@@ -82,13 +89,16 @@ export function RoomObjectButton({
             active && 'scale-110',
             buzzing && 'animate-flicker',
           )}
-          style={{ width: artSize, height: artSize }}
+          style={{ width: scalable(artSize), height: scalable(artSize) }}
           aria-hidden
         >
           {hasArt(object.id) ? (
             <ObjectArt id={object.id} />
           ) : (
-            <span className="flex h-full w-full items-center justify-center text-[30px] leading-none">
+            <span
+              className="flex h-full w-full items-center justify-center leading-none"
+              style={{ fontSize: scalable(30) }}
+            >
               {object.emoji}
             </span>
           )}
@@ -101,7 +111,7 @@ export function RoomObjectButton({
             'mt-[-4px] block h-[5px] rounded-[50%] bg-black/55 blur-[2px] transition-all duration-300',
             active && 'bg-black/65',
           )}
-          style={{ width: artSize * 0.62 }}
+          style={{ width: scalable(artSize * 0.62) }}
         />
 
         {/* 名字：平时藏起来，只有悬停/键盘聚焦时才浮出来。

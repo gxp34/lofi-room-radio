@@ -96,7 +96,10 @@ export function RoomPanorama() {
   )
 
   return (
-    <div className="relative aspect-[16/11] w-full select-none overflow-hidden rounded-2xl border border-white/[0.08] bg-[#191322] shadow-[0_30px_80px_-40px_rgba(0,0,0,1)]">
+    /* container-type: inline-size 是给里面的物件用的 ——
+       ART_SIZE 里那些「照 1130px 宽调的像素」要靠 cqw 换算，
+       手机上的房间变窄时物件才会跟着等比缩小（详见 room-props.tsx 的 scalable）。 */
+    <div className="relative aspect-[16/11] w-full select-none overflow-hidden rounded-2xl border border-white/[0.08] bg-[#191322] shadow-[0_30px_80px_-40px_rgba(0,0,0,1)] [container-type:inline-size]">
       {/* ================= 墙 ================= */}
       <Wall lights={lights} />
 

@@ -24,7 +24,37 @@ interface ArtProps {
   className?: string
 }
 
-/** 每种东西显示多大（px，会随容器缩放）——宁大勿小 */
+/**
+ * 房间全景的宽度基准（px）。
+ *
+ * ART_SIZE / HIT_PAD 里的数字都是照这个宽度调出来的
+ * （桌面端 max-w 下量出来约 1130px）。
+ *
+ * 为什么需要它：这两个表原本的注释写的是「px，会随容器缩放」，
+ * 但代码里一直当固定 px 用 —— 缩放从来没实现过。
+ * 后果在窄屏上很明显：手机里房间只有约 358px 宽，92px 的猫占了
+ * 房间宽度的四分之一，所有东西挤成一团。
+ *
+ * 当初的应对是把全景整个藏掉、窄屏只留文字卡片，
+ * 于是手机上「房间」就没了，只剩一张标签表 —— 那正是这个站最不该丢的东西。
+ */
+export const ART_REFERENCE_WIDTH = 1130
+
+/**
+ * 把「照 1130px 宽调的像素值」换算成能随容器缩放的 CSS 长度。
+ *
+ * 用 cqw（容器宽度的 1%）：房间变窄，物件就跟着等比缩小，
+ * 相对位置和大小都不会乱。用 cqw 而不是 vw，是因为
+ * 手机横屏 / 分屏时视口宽度和房间实际宽度并不是一回事。
+ *
+ * 前提：祖先元素要有 container-type: inline-size —— room-panorama 的最外层已设置。
+ * 没有 container 上下文时 cqw 会退回视口宽度，不至于算不出来。
+ */
+export function scalable(px: number): string {
+  return `${((px / ART_REFERENCE_WIDTH) * 100).toFixed(3)}cqw`
+}
+
+/** 每种东西显示多大（px，照 1130px 宽的房间调的）——宁大勿小 */
 export const ART_SIZE: Record<string, number> = {
   cat: 92,
   record: 80,
