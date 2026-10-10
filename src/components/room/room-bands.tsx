@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from 'react'
-import { CloudRain, Moon } from 'lucide-react'
 
 import { RoomObjectButton } from '@/components/room/room-object-button'
 import { ROOM_OBJECTS } from '@/lib/constants'
@@ -12,10 +11,19 @@ import type { RoomZone } from '@/types'
 /**
  * 房间的窄屏版本。
  *
- * 手机上硬塞一个 16:10 的全景，东西会小到点不中，也没法看。
- * 所以窄屏改成「按房间分区排成纵向卡片」：
- * 墙上 / 架子上 / 桌面上 / 地上各是一条台面，东西摆在这条台面上。
+ * 手机上硬塞一个 16:10 的全景，东西会小到点不中，所以窄屏另给一份
+ * 「按房间分区排成纵向卡片」：墙上 / 架子上 / 桌面上 / 沙发上 / 地上。
  * 保留了房间的空间感（台面的木质边缘、地板透视），但每个东西都是能点的大卡片。
+ *
+ * ⚠️ **这里不要再加布景装饰。**
+ *
+ * 曾经在墙上放过一个会下雨的窗、在地上放过一块地毯，本意是别让这一条太空。
+ * 但那两样**本来就是可点物件**（ROOM_OBJECTS 里的 window 和 rug），
+ * 于是同一个东西在一条里出现了两次：一次是点不动的装饰、一次是能点的卡片，
+ * 看起来像"这里怎么多了一块空的"。
+ *
+ * 而且现在全景在所有屏幕都显示了（见 room-scene.tsx），
+ * 真正带雨的窗、真正的地毯都在全景里，这边不需要再演一遍。
  */
 
 const ZONES: Array<{ id: RoomZone; label: string; hint: string }> = [
@@ -115,9 +123,6 @@ function ZoneBand({ zone }: { zone: { id: RoomZone; label: string; hint: string 
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {zone.id === 'wall' && <WindowProp />}
-        {zone.id === 'floor' && <RugProp />}
-
         {objects.map((object) => (
           <RoomObjectButton key={object.id} object={object} variant="chip" />
         ))}
@@ -126,60 +131,3 @@ function ZoneBand({ zone }: { zone: { id: RoomZone; label: string; hint: string 
   )
 }
 
-/** 窗（窄屏的简化版布景） */
-function WindowProp() {
-  const moonShift = useRoomStore((state) => state.ambient.moonShift)
-  const rain = useRoomStore((state) => state.ambient.rain)
-
-  const streaks = React.useMemo(
-    () => [12, 28, 44, 61, 78].map((left, index) => ({ left, delay: index * 0.7 })),
-    [],
-  )
-
-  return (
-    <div
-      aria-hidden
-      className="relative h-[62px] w-[104px] shrink-0 overflow-hidden rounded-lg border-2 border-[#3a2b23] bg-gradient-to-b from-[#0f1520] to-[#131a26] sm:h-[54px] sm:w-[92px]"
-    >
-      <span
-        className="absolute top-2 h-4 w-4 rounded-full bg-paper/80 shadow-[0_0_18px_rgba(244,238,231,0.55)] transition-[left] duration-1000"
-        style={{ left: `${20 + moonShift}%` }}
-      />
-      {streaks.map((streak) => (
-        <span
-          key={streak.left}
-          className="animate-rainfall absolute top-0 w-px bg-gradient-to-b from-transparent via-rain/60 to-transparent"
-          style={{
-            left: `${streak.left}%`,
-            height: rain === 'heavy' ? '26px' : '16px',
-            animationDelay: `${streak.delay}s`,
-            animationDuration: rain === 'light' ? '1.5s' : rain === 'heavy' ? '0.55s' : '0.95s',
-          }}
-        />
-      ))}
-      <span className="absolute bottom-1 left-1.5 flex items-center gap-1 text-[9px] text-dust/70">
-        <CloudRain className="h-2.5 w-2.5" />
-        雨
-      </span>
-      <span className="absolute bottom-1 right-1.5 text-dust/50">
-        <Moon className="h-2.5 w-2.5" />
-      </span>
-    </div>
-  )
-}
-
-/** 地毯（窄屏的简化版布景） */
-function RugProp() {
-  return (
-    <div
-      aria-hidden
-      className="relative h-[62px] w-[104px] shrink-0 rounded-lg border border-white/[0.05] bg-[#3a2b23]/45 sm:h-[54px] sm:w-[92px]"
-      style={{
-        backgroundImage:
-          'repeating-linear-gradient(45deg, rgba(247,200,115,0.06) 0px, rgba(247,200,115,0.06) 4px, transparent 4px, transparent 10px)',
-      }}
-    >
-      <span className="absolute inset-x-0 bottom-1 text-center text-[9px] text-dust/70">地毯</span>
-    </div>
-  )
-}
