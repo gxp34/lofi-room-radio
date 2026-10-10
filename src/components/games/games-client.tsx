@@ -13,6 +13,8 @@ import { playSfx } from '@/lib/audio/sfx'
 import { cn } from '@/lib/utils'
 import { useAchievementStore } from '@/stores/achievement-store'
 import { useEventStore } from '@/stores/event-store'
+import type { PuzzlePhoto } from '@/lib/games/puzzle'
+import type { RadioDynamicData } from '@/components/games/game-radio'
 import type { GameDef, GameSlug } from '@/types'
 
 /**
@@ -48,18 +50,51 @@ const GameTarot = dynamic(() => import('@/components/games/game-tarot').then((mo
   loading: GameLoading,
 })
 
+const GamePuzzle = dynamic(
+  () => import('@/components/games/game-puzzle').then((mod) => mod.GamePuzzle),
+  { ssr: false, loading: GameLoading },
+)
+
+const GameRadio = dynamic(
+  () => import('@/components/games/game-radio').then((mod) => mod.GameRadio),
+  { ssr: false, loading: GameLoading },
+)
+
+/**
+ * 每个游戏最少需要这两个 prop；额外的素材 prop（照片、电台素材）
+ * 都是可选的，各游戏自己兜默认值 —— 这样一张表就能装下所有游戏，
+ * 不用为每个游戏写一遍分发分支。
+ */
+export interface GameComponentProps {
+  highScore: number
+  reportScore: (score: number) => void
+  /** 只有照片拼图用 */
+  photos?: PuzzlePhoto[]
+  /** 只有调频用 */
+  dynamic?: RadioDynamicData
+}
+
 /** slug → 组件。没登记的 slug 会在下面被跳过（数据库里可能有别人加的游戏） */
-const GAME_COMPONENTS: Record<
-  string,
-  React.ComponentType<{ highScore: number; reportScore: (score: number) => void }>
-> = {
+const GAME_COMPONENTS: Record<string, React.ComponentType<GameComponentProps>> = {
   '2048': Game2048,
   snake: GameSnake,
   memory: GameMemory,
   tarot: GameTarot,
+  puzzle: GamePuzzle,
+  radio: GameRadio,
 }
 
-export function GamesClient({ games }: { games: GameDef[] }) {
+export function GamesClient({
+  games,
+  puzzlePhotos,
+  radioDynamic,
+}: {
+  games: GameDef[]
+  /** 拼图素材：公开手帐里的照片（服务端读好传进来） */
+  puzzlePhotos?: PuzzlePhoto[]
+  /** 调频素材：唱片架的歌名 + 树洞墙上的信 */
+  radioDynamic?: RadioDynamicData
+}) {
   const { settings } = useRoom()
 
   const hydrated = useAchievementStore((state) => state.hydrated)
@@ -216,6 +251,8 @@ export function GamesClient({ games }: { games: GameDef[] }) {
         <ActiveGame
           highScore={bestScores[activeGame.slug] ?? 0}
           reportScore={(score) => reportScore(activeGame.slug, score)}
+          photos={puzzlePhotos}
+          dynamic={radioDynamic}
         />
       )}
     </div>

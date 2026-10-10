@@ -364,6 +364,22 @@ export const DEFAULT_GAMES: GameDef[] = [
     config: { deck: 'major', allowReverse: true },
     sort: 40,
   },
+  {
+    slug: 'puzzle',
+    name: '照片拼图',
+    description: '把一张手帐照片拼回去。拼完能看见它背后的那句话。',
+    enabled: true,
+    config: { sizes: [4, 5, 8], source: 'journal' },
+    sort: 50,
+  },
+  {
+    slug: 'radio',
+    name: '调频',
+    description: '80 到 108 之间，噪音里找信号。有些台只在深夜才有。',
+    enabled: true,
+    config: { min: 80, max: 108, step: 0.1 },
+    sort: 60,
+  },
 ]
 
 /* ==========================================================================
@@ -381,6 +397,8 @@ export const DEFAULT_ACHIEVEMENTS: AchievementDef[] = [
   { key: 'midnight_owl', name: '夜猫子', description: '在 0:00–5:00 之间来过。', icon: 'MoonStar', secret: true, sort: 80 },
   { key: 'alien_radio', name: '外星电台', description: '听到过那段 5 秒的外星广播。', icon: 'RadioTower', secret: true, sort: 90 },
   { key: 'hidden_drawer', name: '隐藏抽屉的钥匙', description: '连续三天来看猫，猫给了你一把小钥匙。', icon: 'KeyRound', secret: true, sort: 100 },
+  { key: 'photo_restored', name: '照片复原了', description: '把手帐里的一张照片拼回原样。', icon: 'Puzzle', secret: false, sort: 110 },
+  { key: 'hidden_frequency', name: '107.9', description: '在调频里找到了那个不该存在的频道。', icon: 'Radio', secret: true, sort: 120 },
 ]
 
 /** 长按唱片机时调到的随机频道 */

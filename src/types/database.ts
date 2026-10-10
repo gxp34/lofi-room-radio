@@ -352,6 +352,36 @@ export type Database = {
         Relationships: []
       }
 
+      /* ---------------- game_saves（小游戏存档，见 0009） ---------------- */
+      game_saves: {
+        Row: {
+          id: string
+          user_id: string
+          game_slug: string
+          /** 不透明状态，只有对应游戏自己解析 */
+          state_json: Json
+          updated_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          game_slug: string
+          state_json?: Json
+          updated_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          game_slug?: string
+          state_json?: Json
+          updated_at?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+
       /* ---------------- events ---------------- */
       events: {
         Row: {

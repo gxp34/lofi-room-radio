@@ -5,7 +5,7 @@ import { AchievementManager } from '@/components/admin/achievement-manager'
 import { EventManager } from '@/components/admin/event-manager'
 import { GameManager, type AdminGameCard } from '@/components/admin/game-manager'
 import { GameTarot } from '@/components/games/game-tarot'
-import { TarotPreview } from '@/app/dev/preview/[name]/tarot-preview'
+import { TarotPreview, PuzzlePreview, RadioPreview } from '@/app/dev/preview/[name]/game-previews'
 import { TarotCardFace } from '@/components/games/tarot-cards'
 import { TAROT_CARDS } from '@/lib/tarot'
 import { JournalManager, JournalEditor } from '@/components/admin/journal-manager'
@@ -42,6 +42,8 @@ const PREVIEWS = [
   { name: 'achievements', label: '成就' },
   { name: 'games', label: '小游戏' },
   { name: 'tarot', label: '塔罗（前台）' },
+  { name: 'puzzle', label: '照片拼图（前台）' },
+  { name: 'radio', label: '调频（前台）' },
   { name: 'tarot-deck', label: '塔罗 · 22 张牌面' },
   { name: 'media', label: '媒体库' },
   { name: 'settings', label: '站点设置' },
@@ -137,6 +139,21 @@ export default function DevPreviewPage({ params }: { params: { name: string } })
       {name === 'tarot' && (
         <AdminPage title="塔罗（前台）" description="预览数据 · 这里是真的可以抽牌的">
           <TarotPreview />
+        </AdminPage>
+      )}
+
+      {name === 'puzzle' && (
+        <AdminPage
+          title="照片拼图（前台）"
+          description="预览数据 · 没有照片，所以拼的是内置像素画；有照片时逻辑一样"
+        >
+          <PuzzlePreview />
+        </AdminPage>
+      )}
+
+      {name === 'radio' && (
+        <AdminPage title="调频（前台）" description="预览数据 · 点歌台和树洞回音用的是假素材">
+          <RadioPreview />
         </AdminPage>
       )}
 

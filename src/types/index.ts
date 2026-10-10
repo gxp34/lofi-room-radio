@@ -41,7 +41,7 @@ export type TriggerType = EventTriggerDb
 export type TrackTag = '深夜' | '雨' | '通勤' | '开心' | '难过' | '随便听听'
 
 /** 小游戏 slug */
-export type GameSlug = '2048' | 'snake' | 'memory' | 'tarot'
+export type GameSlug = '2048' | 'snake' | 'memory' | 'tarot' | 'puzzle' | 'radio'
 
 /* ==========================================================================
    2. 导航与房间物件
