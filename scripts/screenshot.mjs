@@ -144,23 +144,28 @@ try {
   await send('Page.navigate', { url: URL_TO_OPEN })
   await sleep(SETTLE_MS)
 
-  // 可选：截图前先点一下某段文字，用来截「点了之后」的状态。
-  //   $env:CLICK_TEXT="开始占卜"; $env:CLICK_WAIT_MS=2500; node scripts/screenshot.mjs ...
-  // （塔罗那种要点一下才出结果的，没有这个就只能截到初始画面）
+  // 可选：截图前依次点几下，用来截「点了之后」的状态。
+  //   $env:CLICK_TEXT="塔罗,开始占卜"; $env:CLICK_WAIT_MS=2500; node scripts/screenshot.mjs ...
+  // 逗号分隔，按顺序点；每点一下等 CLICK_STEP_MS（默认 500ms），
+  // 全部点完再等 CLICK_WAIT_MS 让动画跑完（塔罗要洗牌 + 逐张翻牌）。
   const clickText = process.env.CLICK_TEXT
   if (clickText) {
-    const clicked = await send('Runtime.evaluate', {
-      expression: `(() => {
-        const target = ${JSON.stringify(clickText)};
-        const nodes = [...document.querySelectorAll('button, a, [role="tab"], summary')];
-        const hit = nodes.find((el) => (el.textContent || '').includes(target));
-        if (!hit) return '没找到：' + target;
-        hit.click();
-        return '已点击：' + target;
-      })()`,
-      returnByValue: true,
-    })
-    console.log(clicked?.result?.value ?? '(点击结果未知)')
+    const stepMs = Number(process.env.CLICK_STEP_MS ?? 500)
+    for (const text of clickText.split(',').map((s) => s.trim()).filter(Boolean)) {
+      const clicked = await send('Runtime.evaluate', {
+        expression: `(() => {
+          const target = ${JSON.stringify(text)};
+          const nodes = [...document.querySelectorAll('button, a, [role="tab"], summary')];
+          const hit = nodes.find((el) => (el.textContent || '').includes(target));
+          if (!hit) return '没找到：' + target;
+          hit.click();
+          return '已点击：' + target;
+        })()`,
+        returnByValue: true,
+      })
+      console.log('  ' + (clicked?.result?.value ?? '(点击结果未知)'))
+      await sleep(stepMs)
+    }
     await sleep(Number(process.env.CLICK_WAIT_MS ?? 1500))
   }
 
