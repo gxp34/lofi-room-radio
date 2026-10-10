@@ -4,7 +4,7 @@ import {
   WEATHER_FALLBACK_LON,
 } from '@/lib/env.server'
 import { fetchWithTimeout, readCachedSetting, writeCachedSetting, readMemory, writeMemory } from '@/lib/external/cache'
-import { computeMoon, computeSkyTimes, skyPhaseAt } from '@/lib/external/sky'
+import { computeMoon, computeSkyTimes, estimateUtcOffsetSeconds, skyPhaseAt } from '@/lib/external/sky'
 import { weatherFromCode } from '@/lib/external/sky-meta'
 import type { SkyPayload } from '@/types/external'
 
@@ -28,6 +28,8 @@ const CACHE_TTL_MS = 30 * 60 * 1000
 const FETCH_TIMEOUT_MS = 6000
 
 interface OpenMeteoResponse {
+  /** 城市相对 UTC 的偏移（秒）。请求里带了 timezone=auto 就会有 */
+  utc_offset_seconds?: number
   current?: {
     time?: string
     temperature_2m?: number
@@ -117,11 +119,13 @@ function localSky(
   'live' | 'note' | 'city' | 'temperature' | 'isDay' | 'weather'
 > {
   const sky = computeSkyTimes(now, lat, lon)
+  // 没有网络时拿不到城市的真实时区，按经度估一个（见 estimateUtcOffsetSeconds）
+  const offset = estimateUtcOffsetSeconds(lon)
   return {
     observedAt: now.toISOString(),
     moon: computeMoon(now),
     sky,
-    phase: skyPhaseAt(now, sky),
+    phase: skyPhaseAt(now, sky, offset),
     fetchedAt: now.toISOString(),
   }
 }
@@ -153,6 +157,16 @@ async function fetchSky(
     // 天空那半重新算一次 —— 用真实经纬度，日出日落才准
     const sky = computeSkyTimes(now, options.lat, options.lon)
 
+    /**
+     * 时区偏移：优先用 Open-Meteo 给的（它知道这个城市真正的时区，
+     * 包括夏令时）；没给就按经度估。
+     * 这个值决定「现在算不算深夜」，用服务器本地时间会差好几个时区。
+     */
+    const offset =
+      typeof data.utc_offset_seconds === 'number'
+        ? data.utc_offset_seconds
+        : estimateUtcOffsetSeconds(options.lon)
+
     return {
       live: true,
       note: null,
@@ -164,7 +178,7 @@ async function fetchSky(
       weather: weatherFromCode(current.weather_code),
       moon: computeMoon(now),
       sky,
-      phase: skyPhaseAt(now, sky),
+      phase: skyPhaseAt(now, sky, offset),
       fetchedAt: now.toISOString(),
     }
   } catch (error) {

@@ -49,24 +49,42 @@ export function computeSkyTimes(date: Date, lat: number, lon: number): SkyTimes 
 }
 
 /**
+ * 城市相对 UTC 的偏移（秒）。
+ *
+ * 拿不到真实偏移时按经度估：每 15° 一个时区。
+ * 对"现在是上午还是黄昏"这种粒度足够准（中国全境都用 +8，估算也是 +8）。
+ */
+export function estimateUtcOffsetSeconds(lon: number): number {
+  return Math.round(lon / 15) * 3600
+}
+
+/**
  * 现在落在一天里的哪一段。
  *
- * 顺序很重要：先判断"太阳有没有出来"，所以极昼极夜（sunrise/sunset 为 null）
+ * ⚠️ **必须传 utcOffsetSeconds**，不能用 `date.getHours()`。
+ * Vercel 的服务器跑在 UTC，用服务器本地小时的话「深夜」会被判在
+ * UTC 0–5 点 —— 换成上海时间就是早上 8 点到下午 1 点。
+ * （这个 bug 是靠"下午 17:41 解锁了夜猫子成就"发现的。）
+ * 日出日落那几个时间戳是绝对时刻，不受影响；只有按时段分档的这一处要偏移。
+ *
+ * 顺序也很重要：先判断"太阳有没有出来"，所以极昼极夜（sunrise/sunset 为 null）
  * 会落到"白天"或"深夜"，而不是因为比较 null 得出奇怪的结果。
  */
-export function skyPhaseAt(date: Date, times: SkyTimes): SkyPhase {
+export function skyPhaseAt(date: Date, times: SkyTimes, utcOffsetSeconds: number): SkyPhase {
   const now = date.getTime()
   const at = (value: string | null) => (value ? Date.parse(value) : null)
 
-  const hour = date.getHours()
+  // 把绝对时刻挪到"城市当地"，再取小时
+  const localHour = new Date(now + utcOffsetSeconds * 1000).getUTCHours()
+
   const sunrise = at(times.sunrise)
   const sunset = at(times.sunset)
   const dawn = at(times.dawn)
   const dusk = at(times.dusk)
   const golden = at(times.goldenHour)
 
-  // 深夜：0–5 点，房间只剩台灯
-  if (hour >= 0 && hour < 5) return 'deepNight'
+  // 深夜：当地 0–5 点，房间只剩台灯
+  if (localHour >= 0 && localHour < 5) return 'deepNight'
 
   // 太阳没出来（含极夜）
   if (sunrise !== null && now < sunrise) return dawn !== null && now >= dawn ? 'dawn' : 'deepNight'
@@ -76,8 +94,8 @@ export function skyPhaseAt(date: Date, times: SkyTimes): SkyPhase {
 
   // 白天：日落前那一段黄金时刻算黄昏
   if (golden !== null && now >= golden) return 'dusk'
-  if (hour < 11) return 'morning'
-  if (hour < 16) return 'afternoon'
+  if (localHour < 11) return 'morning'
+  if (localHour < 16) return 'afternoon'
   return 'evening'
 }
 
