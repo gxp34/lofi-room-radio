@@ -84,3 +84,37 @@ export const WEATHER_FALLBACK_CITY = pick(
   process.env.WEATHER_CITY,
   '上海',
 )
+
+/* --------------------------------------------------------------------------
+   功能开关
+   -------------------------------------------------------------------------- */
+
+/**
+ * 从环境变量读布尔值。
+ *
+ * ⚠️ **不能写 `z.coerce.boolean()`**：`Boolean('false')` 是 `true`，
+ * 于是 `RADIO_ENABLED=false` 会被理解成"打开"。这个坑很隐蔽 ——
+ * 只有明确列举出"假"的那几个词才对。
+ */
+function booleanFromEnv(value: unknown, fallback: boolean): boolean {
+  if (typeof value !== 'string') return fallback
+
+  const normalized = value.trim().toLowerCase()
+  if (normalized === '') return fallback
+  if (['false', '0', 'off', 'no', 'disabled'].includes(normalized)) return false
+  if (['true', '1', 'on', 'yes', 'enabled'].includes(normalized)) return true
+
+  return fallback
+}
+
+/**
+ * 实时电台的**总闸**。
+ *
+ * 默认开。它是给"先关掉、以后再开"准备的：
+ * 关掉之后连 SomaFM 都不会去请求，适合在不想让站点发外部请求的时候用。
+ * 后台「站点设置」里还有一个单独的开关，两个都开才会真的去拉频道。
+ */
+export const RADIO_ENABLED_FALLBACK = booleanFromEnv(process.env.RADIO_ENABLED, true)
+
+/** 星空图的总闸。默认开。纯本地计算，关掉只是不渲染 */
+export const CELESTIAL_ENABLED_FALLBACK = booleanFromEnv(process.env.CELESTIAL_ENABLED, true)

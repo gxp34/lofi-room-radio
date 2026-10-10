@@ -105,5 +105,15 @@ function mergeSettings(
     weatherLon: settingNumber(map, 'weather_lon'),
     dailyQuoteEnabled: settingBoolean(map, 'daily_quote_enabled', fallback.dailyQuoteEnabled),
     dailyQuoteOverride: settingString(map, 'daily_quote_override', '') || null,
+    // ---- 星空图（key 名与 room-provider.tsx 的 mergeSiteSettings 保持一致）----
+    celestialEnabled: settingBoolean(map, 'celestial_enabled', fallback.celestialEnabled),
+    // ---- 实时电台（规则和 room-provider 的 mergeSiteSettings 一致）----
+    radioEnabled: settingBoolean(map, 'radio_enabled', fallback.radioEnabled),
+    radioChannels: settingString(map, 'radio_channels', ''),
+    radioDefaultChannel: settingString(
+      map,
+      'radio_default_channel',
+      fallback.radioDefaultChannel,
+    ),
   }
 }

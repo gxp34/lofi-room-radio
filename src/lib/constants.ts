@@ -37,8 +37,11 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/', label: '房间', icon: 'DoorOpen', description: '回到房间全景' },
   { href: '/journal', label: '图文手帐', icon: 'NotebookPen', description: '照片和字写在一起' },
   { href: '/music', label: '唱片架', icon: 'Disc3', description: '点唱机与歌单' },
+  // 电台紧挨着唱片架：两个都是"听东西"的地方，但一个是自己的收藏，一个是外面的世界
+  { href: '/radio', label: '电台', icon: 'RadioTower', description: '外面的实时电台' },
   { href: '/treehole', label: '深夜抽屉', icon: 'Mailbox', description: '把心事投进来' },
   { href: '/games', label: '摸鱼掌机', icon: 'Gamepad2', description: '2048 / 贪吃蛇 / 翻牌记忆' },
+  { href: '/sky', label: '星空', icon: 'MoonStar', description: '今晚头顶上是什么样' },
   { href: '/about', label: '主持人档案', icon: 'UserRound', description: '关于房东' },
 ]
 
@@ -489,6 +492,13 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   weatherLon: null,
   dailyQuoteEnabled: true,
   dailyQuoteOverride: null,
+  // 星空图：纯本地计算（亮星表在包里），默认开。关掉之后 /sky 只显示静态星图 + 月相
+  celestialEnabled: true,
+  // 电台：默认开。中文频道的地址**不写死在代码里** —— 它们会失效、会换，
+  // 所以这里初始值是空的，真正的列表由 0014_radio.sql 灌进数据库、后台可改。
+  radioEnabled: true,
+  radioChannels: '',
+  radioDefaultChannel: 'somafm:groovesalad',
 }
 
 /* ==========================================================================

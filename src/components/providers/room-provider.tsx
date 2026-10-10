@@ -523,6 +523,20 @@ function mergeSiteSettings(
     weatherLon: settingNumber(map, 'weather_lon'),
     dailyQuoteEnabled: settingBoolean(map, 'daily_quote_enabled', fallback.dailyQuoteEnabled),
     dailyQuoteOverride: settingString(map, 'daily_quote_override', '') || null,
+    // 星空图开关。key 名必须与后台 settings-form.tsx / lib/admin/settings.ts
+    // 的 toRows() / admin settings 页的 mergeSettings() 完全一致，
+    // 否则前台会静默退回默认值（默认是开）。
+    celestialEnabled: settingBoolean(map, 'celestial_enabled', fallback.celestialEnabled),
+    // ---- 实时电台 ----
+    // 这三个 key 必须和 lib/external/radio-settings.ts 里读的完全一致，
+    // 否则后台改了前台不生效（而且是静默的）。
+    radioEnabled: settingBoolean(map, 'radio_enabled', fallback.radioEnabled),
+    radioChannels: settingString(map, 'radio_channels', ''),
+    radioDefaultChannel: settingString(
+      map,
+      'radio_default_channel',
+      fallback.radioDefaultChannel,
+    ),
   }
 }
 

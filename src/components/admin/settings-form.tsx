@@ -8,9 +8,11 @@ import {
   MessageCircleHeart,
   Music4,
   Plus,
+  RadioTower,
   RotateCcw,
   Save,
   Share2,
+  Sparkles,
   Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -67,6 +69,13 @@ interface FormState {
   weatherLon: string
   dailyQuoteEnabled: boolean
   dailyQuoteOverride: string
+  /** 星空图开关 */
+  celestialEnabled: boolean
+  /** 实时电台开关 */
+  radioEnabled: boolean
+  /** 自定义频道（多行文本） */
+  radioChannels: string
+  radioDefaultChannel: string
 }
 
 /** SiteSettings（可空字段用 null）→ 表单 state（一律用空字符串，受控输入框更好用） */
@@ -97,6 +106,10 @@ function toFormState(settings: SiteSettings): FormState {
     weatherLon: settings.weatherLon === null ? '' : String(settings.weatherLon),
     dailyQuoteEnabled: settings.dailyQuoteEnabled,
     dailyQuoteOverride: settings.dailyQuoteOverride ?? '',
+    celestialEnabled: settings.celestialEnabled,
+    radioEnabled: settings.radioEnabled,
+    radioChannels: settings.radioChannels,
+    radioDefaultChannel: settings.radioDefaultChannel,
   }
 }
 
@@ -193,6 +206,10 @@ export function SettingsForm({ initial }: { initial: SiteSettings }) {
         weatherLon: values.weatherLon,
         dailyQuoteEnabled: values.dailyQuoteEnabled,
         dailyQuoteOverride: values.dailyQuoteOverride,
+        celestialEnabled: values.celestialEnabled,
+        radioEnabled: values.radioEnabled,
+        radioChannels: values.radioChannels,
+        radioDefaultChannel: values.radioDefaultChannel,
       }
 
       const result = await saveSettings(payload)
@@ -516,6 +533,96 @@ export function SettingsForm({ initial }: { initial: SiteSettings }) {
               placeholder="留空 = 自动抓"
             />
           </Field>
+        </div>
+      </Section>
+
+      {/* ---------------- 星空图 ----------------
+          单独一个区块，因为这一项和上面两项的性质不一样：
+          它不是"从外面拿数据"，而是页面 /sky 的开关（数据全是本地算的）。 */}
+      <Section
+        title="星空图"
+        description="「星空图」那一页的开关。它一个外部请求都不发，所以关掉它不是省流量，只是不想给访客看。"
+        actions={<Sparkles className="h-4 w-4 text-dust" aria-hidden />}
+      >
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.015] p-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-paper/90">今晚的星空</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-dust">
+              亮星表内嵌在页面包里，月亮和行星的位置本地用公式算（不请求任何接口）。
+              经纬度沿用上面的「实时天气」那一组，留空则用环境变量 WEATHER_LAT / WEATHER_LON。
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-dust/80">
+              关掉之后，那一页只显示一张静态星图和月相。
+            </p>
+          </div>
+          <Switch
+            checked={values.celestialEnabled}
+            onCheckedChange={(checked) => patch({ celestialEnabled: checked })}
+            aria-label="星空图开关"
+          />
+        </div>
+      </Section>
+
+      {/* ---------------- 实时电台 ---------------- */}
+      <Section
+        title="实时电台"
+        description="外面的电台（SomaFM + 中文台）。前端不直连，全部走服务端代理并解析播放列表，频道列表缓存 1 小时。"
+        actions={<RadioTower className="h-4 w-4 text-dust" aria-hidden />}
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.015] p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-paper/90">电台开关</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-dust">
+                关掉之后连 SomaFM 都不会去请求，那一页只剩一句说明。
+                另外还有一个环境变量 <code className="text-lamp">RADIO_ENABLED</code> 当总闸，
+                两个都开才真的会去拉频道。
+              </p>
+            </div>
+            <Switch
+              checked={values.radioEnabled}
+              onCheckedChange={(checked) => patch({ radioEnabled: checked })}
+              aria-label="电台开关"
+            />
+          </div>
+
+          {values.radioEnabled && (
+            <>
+              <Field
+                label="自定义频道"
+                htmlFor="radio-channels"
+                hint="一行一个：名称 | 播放地址 | 标签（标签用逗号隔开，搜索会用到）。以 # 开头是注释。"
+              >
+                <Textarea
+                  id="radio-channels"
+                  rows={12}
+                  value={values.radioChannels}
+                  onChange={(event) => patch({ radioChannels: event.target.value })}
+                  placeholder={'清晨音乐台 | https://example.com/live.mp3 | 轻音乐,清晨\n# 注释行会被忽略'}
+                  className="font-mono text-[11px] leading-relaxed"
+                />
+              </Field>
+
+              <Field
+                label="默认选中的频道 id"
+                htmlFor="radio-default-channel"
+                hint="只是进页面时高亮哪一个，不会自动播放。SomaFM 的格式是 somafm:groovesalad；自定义的格式是 custom:名称。"
+              >
+                <Input
+                  id="radio-default-channel"
+                  value={values.radioDefaultChannel}
+                  onChange={(event) => patch({ radioDefaultChannel: event.target.value })}
+                  placeholder="somafm:groovesalad"
+                />
+              </Field>
+
+              <p className="text-[11px] leading-relaxed text-dust">
+                SomaFM 的几十个频道是**自动**从它的公开目录拉的，不用在这里写。
+                下面只填它没有的（中文台为主）。
+                地址会失效 —— 失效了改这里就行，不用重新部署。
+              </p>
+            </>
+          )}
         </div>
       </Section>
 

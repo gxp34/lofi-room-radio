@@ -32,6 +32,11 @@ Thumbs.db
 # 本地截图（scripts/shot.mjs 的输出）
 /.shots
 
+# 代码生成脚本下载的原始数据缓存
+# （scripts/build-sky-data.mjs 会把 d3-celestial 的星表下到这里，
+#   1.2 MB 左右，不是站点的东西，不该进仓库；删掉脚本会自动重新下）
+/.cache
+
 # 日志
 npm-debug.log*
 yarn-debug.log*

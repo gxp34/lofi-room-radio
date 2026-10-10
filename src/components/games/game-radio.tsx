@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { Minus, Plus, Radio, RotateCcw, Signal } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowRight, Minus, Plus, Radio, RadioTower, RotateCcw, Signal } from 'lucide-react'
 
 import { GameShell } from '@/components/games/game-shell'
 import { Button } from '@/components/ui/button'
@@ -432,6 +433,22 @@ export function GameRadio({ dynamic: dynamicProp, highScore, reportScore }: Game
                   {locked.reward}
                 </p>
               )}
+
+              {/*
+                搜到的台 → 去真正的电台页。
+                这个游戏里的六个台是**编的**（天气预报、外星广播……），
+                和 /radio 里真实的几十个台没有对应关系，所以这里不给"播这个台"，
+                只给一个"去外面听听真的电台"的口子。
+                也不会自动播放 —— 那边进页面只拉列表，出声要再点一下。
+              */}
+              <Link
+                href="/radio"
+                className="mt-2.5 flex items-center gap-1.5 border-t border-white/[0.07] pt-2 font-display text-[11px] text-lamp transition-colors hover:text-lamp/80"
+              >
+                <RadioTower className="h-3 w-3" aria-hidden />
+                去电台听听真的台
+                <ArrowRight className="h-3 w-3" aria-hidden />
+              </Link>
             </div>
           ) : (
             <p className="text-[12px] leading-relaxed text-dust">

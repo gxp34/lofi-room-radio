@@ -89,6 +89,22 @@ const settingsSchema = z.object({
     .max(200, '手动填的句子最多 200 字')
     .optional()
     .default(''),
+
+  /* ---------------- 星空图 ----------------
+     默认 true 而不是 false：星图是纯本地计算，不依赖任何外部服务，
+     "没填这一项"和"关掉它"应该是两件事（后者要站长明确点一下）。 */
+  celestialEnabled: z.boolean().default(true),
+
+  /* ---------------- 实时电台 ---------------- */
+  radioEnabled: z.boolean().default(true),
+  radioChannels: z
+    .string()
+    // 一行一个频道。上限 8000 字足够放几十个台，主要是防止误粘一整篇文章进来
+    .max(8000, '频道列表太长了（最多 8000 字）')
+    .optional()
+    .default(''),
+  radioDefaultChannel: z.string().trim().max(80, '默认频道 id 最多 80 字').optional().default(''),
+
   socialLinks: z.array(socialLinkSchema).max(20, '社交链接最多 20 条'),
   backgroundAudio: z.string().trim().max(400, '背景音地址太长了').nullable(),
 })
@@ -168,6 +184,21 @@ function toRows(settings: SiteSettings): SettingRow[] {
       value: settings.dailyQuoteOverride ?? '',
       updated_at: updatedAt,
     },
+    // 星空图开关。前台 room-provider 与 admin settings 页都按 'celestial_enabled' 读
+    { key: 'celestial_enabled', value: settings.celestialEnabled, updated_at: updatedAt },
+
+    /* ---------------- 实时电台 ----------------
+       ⚠️ 这三个 key 和 lib/external/radio-settings.ts 里读的**必须**一致：
+           radio_enabled / radio_channels / radio_default_channel
+       电台**没有**运行时缓存要避开（频道列表和播放列表解析都只存在内存里），
+       所以这里可以放心整行覆盖。 */
+    { key: 'radio_enabled', value: settings.radioEnabled, updated_at: updatedAt },
+    { key: 'radio_channels', value: settings.radioChannels, updated_at: updatedAt },
+    {
+      key: 'radio_default_channel',
+      value: settings.radioDefaultChannel,
+      updated_at: updatedAt,
+    },
   ]
 
   return rows
@@ -177,6 +208,9 @@ function toRows(settings: SiteSettings): SettingRow[] {
 function revalidateSettings() {
   revalidatePath('/admin/settings')
   revalidatePath('/')
+  // 星空图的开关是**页面渲染时**读的（不像天气是客户端自己拉的），
+  // 所以这里必须带上 /sky，否则站长关掉之后刷新页面还是老样子
+  revalidatePath('/sky')
 }
 
 /* --------------------------------------------------------------------------
@@ -218,6 +252,10 @@ export async function saveSettings(input: SettingsInput): Promise<ActionResult<u
     weatherLon: parseCoordinate(data.weatherLon),
     dailyQuoteEnabled: data.dailyQuoteEnabled,
     dailyQuoteOverride: data.dailyQuoteOverride.length > 0 ? data.dailyQuoteOverride : null,
+    celestialEnabled: data.celestialEnabled,
+    radioEnabled: data.radioEnabled,
+    radioChannels: data.radioChannels,
+    radioDefaultChannel: data.radioDefaultChannel,
     socialLinks: data.socialLinks.map((link) => ({
       label: link.label,
       href: link.href,

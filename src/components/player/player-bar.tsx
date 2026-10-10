@@ -7,6 +7,7 @@ import {
   Disc3,
   Pause,
   Play,
+  RadioTower,
   Repeat,
   Repeat1,
   Shuffle,
@@ -44,6 +45,18 @@ export function PlayerBar() {
   const track = tracks[currentIndex] ?? null
   const openRadio = usePlayerStore((state) => Boolean(state.radioChannel))
 
+  /**
+   * 正在播的实时电台。
+   *
+   * 底部这条播放条同时服务两种东西：唱片和直播。
+   * 直播模式下进度条没有意义（流没有长度）、上一首/下一首也没意义，
+   * 所以下面按 liveStation 分了两套控件 —— 但**外壳是同一个**，
+   * 这样切页面时声音不断，也不会出现两条播放条抢位置。
+   */
+  const liveStation = usePlayerStore((state) => state.liveStation)
+  const streamError = usePlayerStore((state) => state.streamError)
+  const isLive = Boolean(liveStation)
+
   // 挂载前不渲染，避免服务端和客户端不一致
   const [mounted, setMounted] = React.useState(false)
   React.useEffect(() => setMounted(true), [])
@@ -57,9 +70,11 @@ export function PlayerBar() {
     return () => window.clearTimeout(timer)
   }, [glitchUntil])
 
-  if (!mounted || !hydrated || tracks.length === 0 || !track) return null
+  // 直播模式下没有"当前唱片"，所以不能再用 !track 当退出条件
+  if (!mounted || !hydrated) return null
+  if (!isLive && (tracks.length === 0 || !track)) return null
 
-  const safeDuration = duration > 0 ? duration : (track.duration ?? 0)
+  const safeDuration = duration > 0 ? duration : (track?.duration ?? 0)
   const progress = safeDuration > 0 ? (currentTime / safeDuration) * 100 : 0
 
   return (
@@ -77,10 +92,22 @@ export function PlayerBar() {
         </div>
 
         <div className="container flex items-center gap-3 py-2.5 sm:py-3">
-          {/* ---------- 左：封面 + 歌名 ---------- */}
+          {/* ---------- 左：封面 + 歌名 / 台名 ---------- */}
           <div className="flex min-w-0 flex-1 items-center gap-3">
             <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-roomDeep">
-              {track.coverUrl ? (
+              {isLive ? (
+                liveStation?.coverUrl ? (
+                  <Image
+                    src={liveStation.coverUrl}
+                    alt={`${liveStation.name} 的封面`}
+                    width={40}
+                    height={40}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <RadioTower className="h-5 w-5 text-lamp" aria-hidden />
+                )
+              ) : track?.coverUrl ? (
                 <Image
                   src={track.coverUrl}
                   alt={`${track.title} 的封面`}
@@ -94,21 +121,38 @@ export function PlayerBar() {
                   aria-hidden
                 />
               )}
-              {/* 黑胶中间那个小孔 */}
-              <span
-                aria-hidden
-                className="absolute h-1.5 w-1.5 rounded-full bg-night ring-1 ring-white/20"
-              />
+              {/* 黑胶中间那个小孔（直播时不是唱片，就不画了） */}
+              {!isLive && (
+                <span
+                  aria-hidden
+                  className="absolute h-1.5 w-1.5 rounded-full bg-night ring-1 ring-white/20"
+                />
+              )}
             </span>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate font-display text-xs text-paper sm:text-sm">
-                {glitching ? '跳针了…' : openRadio ? '调频中…' : track.title}
+              <p className="flex items-center gap-1.5 truncate font-display text-xs text-paper sm:text-sm">
+                {streamError && isLive && (
+                  <span className="shrink-0 rounded-full border border-neon/40 px-1.5 py-px text-[9px] text-neon">
+                    信号丢失
+                  </span>
+                )}
+                {isLive
+                  ? (liveStation?.name ?? '电台')
+                  : glitching
+                    ? '跳针了…'
+                    : openRadio
+                      ? '调频中…'
+                      : (track?.title ?? '')}
               </p>
               <p className="truncate text-[11px] text-muted-foreground">
-                {openRadio
-                  ? radioChannel
-                  : (track.artist ?? '未知艺术家')}
+                {streamError && isLive
+                  ? streamError
+                  : isLive
+                    ? liveStation?.subtitle
+                    : openRadio
+                      ? radioChannel
+                      : (track?.artist ?? '未知艺术家')}
               </p>
             </div>
           </div>
@@ -116,17 +160,22 @@ export function PlayerBar() {
           {/* ---------- 中：桌面端的完整控件 ---------- */}
           <div className="hidden flex-1 flex-col items-center gap-1 sm:flex">
             <div className="flex items-center gap-1">
-              <ControlButton
-                label={shuffle ? '取消随机播放' : '随机播放'}
-                active={shuffle}
-                onClick={() => usePlayerStore.getState().setShuffle(!shuffle)}
-              >
-                <Shuffle className="h-4 w-4" />
-              </ControlButton>
+              {/* 直播没有随机/上一首/下一首/循环 —— 这些按钮留着只会让人按了没反应 */}
+              {!isLive && (
+                <ControlButton
+                  label={shuffle ? '取消随机播放' : '随机播放'}
+                  active={shuffle}
+                  onClick={() => usePlayerStore.getState().setShuffle(!shuffle)}
+                >
+                  <Shuffle className="h-4 w-4" />
+                </ControlButton>
+              )}
 
-              <ControlButton label="上一首" onClick={() => usePlayerStore.getState().prev()}>
-                <SkipBack className="h-4 w-4" />
-              </ControlButton>
+              {!isLive && (
+                <ControlButton label="上一首" onClick={() => usePlayerStore.getState().prev()}>
+                  <SkipBack className="h-4 w-4" />
+                </ControlButton>
+              )}
 
               <button
                 type="button"
@@ -141,51 +190,76 @@ export function PlayerBar() {
                 )}
               </button>
 
-              <ControlButton label="下一首" onClick={() => usePlayerStore.getState().next()}>
-                <SkipForward className="h-4 w-4" />
-              </ControlButton>
+              {!isLive && (
+                <ControlButton label="下一首" onClick={() => usePlayerStore.getState().next()}>
+                  <SkipForward className="h-4 w-4" />
+                </ControlButton>
+              )}
 
-              <ControlButton
-                label={
-                  repeat === 'off' ? '循环播放' : repeat === 'all' ? '单曲循环' : '关闭循环'
-                }
-                active={repeat !== 'off'}
-                onClick={() =>
-                  usePlayerStore
-                    .getState()
-                    .setRepeat(repeat === 'off' ? 'all' : repeat === 'all' ? 'one' : 'off')
-                }
-              >
-                {repeat === 'one' ? (
-                  <Repeat1 className="h-4 w-4" />
-                ) : (
-                  <Repeat className="h-4 w-4" />
-                )}
-              </ControlButton>
+              {!isLive && (
+                <ControlButton
+                  label={
+                    repeat === 'off' ? '循环播放' : repeat === 'all' ? '单曲循环' : '关闭循环'
+                  }
+                  active={repeat !== 'off'}
+                  onClick={() =>
+                    usePlayerStore
+                      .getState()
+                      .setRepeat(repeat === 'off' ? 'all' : repeat === 'all' ? 'one' : 'off')
+                  }
+                >
+                  {repeat === 'one' ? (
+                    <Repeat1 className="h-4 w-4" />
+                  ) : (
+                    <Repeat className="h-4 w-4" />
+                  )}
+                </ControlButton>
+              )}
             </div>
 
-            {/* 进度条 */}
-            <div className="flex w-full max-w-md items-center gap-2">
-              <span className="w-10 shrink-0 text-right font-display text-[10px] text-dust">
-                {formatDuration(currentTime)}
-              </span>
-              <input
-                type="range"
-                min={0}
-                max={Math.max(1, Math.floor(safeDuration))}
-                step={1}
-                value={Math.min(Math.floor(currentTime), Math.floor(safeDuration))}
-                onChange={(event) => usePlayerStore.getState().seek(Number(event.target.value))}
-                aria-label="播放进度"
-                className={cn(
-                  'h-1 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-lamp',
-                  glitching && 'animate-flicker',
-                )}
-              />
-              <span className="w-10 shrink-0 font-display text-[10px] text-dust">
-                {formatDuration(safeDuration)}
-              </span>
-            </div>
+            {/* 进度条：直播没有进度，换成一条"直播中"的说明 */}
+            {isLive ? (
+              <div className="flex w-full max-w-md items-center justify-center gap-2">
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    isPlaying ? 'animate-breathe bg-neon' : 'bg-dust/50',
+                  )}
+                  aria-hidden
+                />
+                <span className="font-display text-[10px] tracking-[0.16em] text-dust">
+                  {isPlaying ? 'LIVE · 正在收音' : '已暂停'}
+                </span>
+                <Link
+                  href="/radio"
+                  className="rounded-md px-1.5 py-0.5 font-display text-[10px] text-lamp transition-colors hover:bg-lamp/10"
+                >
+                  换台
+                </Link>
+              </div>
+            ) : (
+              <div className="flex w-full max-w-md items-center gap-2">
+                <span className="w-10 shrink-0 text-right font-display text-[10px] text-dust">
+                  {formatDuration(currentTime)}
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.max(1, Math.floor(safeDuration))}
+                  step={1}
+                  value={Math.min(Math.floor(currentTime), Math.floor(safeDuration))}
+                  onChange={(event) => usePlayerStore.getState().seek(Number(event.target.value))}
+                  aria-label="播放进度"
+                  className={cn(
+                    'h-1 w-full cursor-pointer appearance-none rounded-full bg-white/15 accent-lamp',
+                    glitching && 'animate-flicker',
+                  )}
+                />
+                <span className="w-10 shrink-0 font-display text-[10px] text-dust">
+                  {formatDuration(safeDuration)}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* ---------- 右：手机播放键 + 桌面音量 ---------- */}
@@ -200,10 +274,10 @@ export function PlayerBar() {
             </button>
 
             <Link
-              href="/music"
+              href={isLive ? '/radio' : '/music'}
               className="hidden rounded-md px-2 py-1 font-display text-xs text-dust transition-colors hover:text-lamp lg:block"
             >
-              唱片架
+              {isLive ? '电台' : '唱片架'}
             </Link>
 
             <div className="hidden items-center gap-1.5 sm:flex">

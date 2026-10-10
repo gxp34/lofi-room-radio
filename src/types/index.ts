@@ -492,6 +492,26 @@ export interface SiteSettings {
   dailyQuoteEnabled: boolean
   /** 后台手动指定的今日一句；填了就压过自动抓的那句 */
   dailyQuoteOverride: string | null
+  /* ---------------- 星空图 ---------------- */
+  /**
+   * 「星空图」(/sky) 的开关。
+   *
+   * 星图是**纯本地计算**（亮星表内嵌在包里，位置用公式算），
+   * 关掉之后 /sky 显示一张静态星图 + 月相，不做任何计算。
+   * 数据库里没有这一行时用环境变量 CELESTIAL_ENABLED 兜底（默认开），
+   * 见 lib/external/celestial-settings.ts。
+   */
+  celestialEnabled: boolean
+  /* ---------------- 实时电台 ---------------- */
+  /** 电台开关。关掉之后连 SomaFM 都不会去请求（环境变量 RADIO_ENABLED 是另一道总闸） */
+  radioEnabled: boolean
+  /**
+   * 自定义频道，**多行文本**，一行一个：`名称 | 播放地址 | 标签`。
+   * 用文本而不是表单：这些地址会失效、会换，要能一眼看懂、直接改一行。
+   */
+  radioChannels: string
+  /** 进电台页面时默认选中的频道 id，例如 `somafm:groovesalad` */
+  radioDefaultChannel: string
 }
 
 /* ==========================================================================

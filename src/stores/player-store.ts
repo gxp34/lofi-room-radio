@@ -6,6 +6,7 @@ import { RADIO_CHANNELS, STORAGE_KEYS } from '@/lib/constants'
 import { readJSON, writeJSON } from '@/lib/storage'
 import { useAchievementStore } from '@/stores/achievement-store'
 import type { PlayerPrefs, Track } from '@/types'
+import type { LiveStation } from '@/types/radio'
 
 /**
  * 播放器状态。
@@ -47,6 +48,17 @@ interface PlayerState {
 
   /** 长按调频的结果，null 表示没在放白噪音 */
   radioChannel: string | null
+  /**
+   * 正在播的**实时电台**（/radio 页面的那些台）。
+   *
+   * 和唱片是互斥的：这个不为 null 时，<audio> 的音源就是直播流，
+   * 而不是 tracks[currentIndex]。做成一个字段而不是"再写一个播放器"，
+   * 是为了复用同一个 <audio>、同一套音量/静音、同一个底部播放条 ——
+   * 两个播放器会互相抢声音，最后一定出 bug。
+   */
+  liveStation: LiveStation | null
+  /** 直播流加载失败的原因（界面上就是「信号丢失」）；null = 正常 */
+  streamError: string | null
   /** 跳针效果：在这个时间戳之前，进度条会来回抖 */
   glitchUntil: number
   /** 外星电台：在这个时间戳之前，播放器会显示噪音状态 */
@@ -74,6 +86,12 @@ interface PlayerState {
   markRestReminded: () => void
   /** 长按调频 */
   tuneRadio: () => string
+  /** 开始放一个实时电台（会顶掉正在放的唱片） */
+  playLiveStation: (station: LiveStation) => void
+  /** 停止直播（回到唱片，但不会自动继续播） */
+  stopLiveStation: () => void
+  /** <audio> 回调：流坏了 / 播不了 */
+  setStreamError: (message: string | null) => void
   /** 跳针 */
   stutter: (ms?: number) => void
   /** 外星电台 */
@@ -117,6 +135,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   listeningMs: 0,
   restReminded: false,
   radioChannel: null,
+  liveStation: null,
+  streamError: null,
   glitchUntil: 0,
   alienUntil: 0,
 
@@ -151,7 +171,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const track = tracks[index]
     if (!track) return
 
-    set({ currentIndex: index, isPlaying: true, currentTime: 0, radioChannel: null })
+    set({
+      currentIndex: index,
+      isPlaying: true,
+      currentTime: 0,
+      radioChannel: null,
+      // 放唱片就把直播停掉：两个音源同时出声是这里唯一不能接受的 bug
+      liveStation: null,
+      streamError: null,
+    })
 
     // 听歌计数：用于「黑胶旅人」成就。
     // 这里只登记，不在这里判定成就 —— 判定需要访问记录等一整套上下文，
@@ -278,6 +306,28 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   playAlien: (ms = 5000) => set({ alienUntil: Date.now() + ms, isPlaying: false }),
 
   clearEffects: () => set({ radioChannel: null, glitchUntil: 0, alienUntil: 0 }),
+
+  /* ------------------------------------------------------------------
+     实时电台
+     ------------------------------------------------------------------ */
+
+  playLiveStation: (station) =>
+    set({
+      liveStation: station,
+      streamError: null,
+      isPlaying: true,
+      // 直播没有"进度"这个概念，把时长清零免得底部播放条画出一条假进度
+      currentTime: 0,
+      duration: 0,
+      radioChannel: null,
+    }),
+
+  stopLiveStation: () => set({ liveStation: null, streamError: null, isPlaying: false }),
+
+  setStreamError: (message) =>
+    // 出错时只暂停，**不清空 liveStation** ——
+    // 清了的话界面就退回"没在放任何东西"，看不到是哪个台丢了信号
+    set({ streamError: message, isPlaying: false }),
 }))
 
 /** 当前这首歌（没有就返回 null） */
