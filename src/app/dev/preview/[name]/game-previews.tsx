@@ -3,6 +3,8 @@
 import { GameTarot } from '@/components/games/game-tarot'
 import { GamePuzzle } from '@/components/games/game-puzzle'
 import { GameRadio } from '@/components/games/game-radio'
+import { GameFishing } from '@/components/games/game-fishing'
+import { GameVirtualCat } from '@/components/games/game-virtual-cat'
 
 /**
  * dev 预览专用的适配层（仅开发环境）。
@@ -40,4 +42,12 @@ export function RadioPreview() {
       }}
     />
   )
+}
+
+export function FishingPreview() {
+  return <GameFishing highScore={0} reportScore={() => {}} />
+}
+
+export function VirtualCatPreview() {
+  return <GameVirtualCat highScore={0} reportScore={() => {}} />
 }

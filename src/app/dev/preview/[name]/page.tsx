@@ -5,7 +5,7 @@ import { AchievementManager } from '@/components/admin/achievement-manager'
 import { EventManager } from '@/components/admin/event-manager'
 import { GameManager, type AdminGameCard } from '@/components/admin/game-manager'
 import { GameTarot } from '@/components/games/game-tarot'
-import { TarotPreview, PuzzlePreview, RadioPreview } from '@/app/dev/preview/[name]/game-previews'
+import { TarotPreview, PuzzlePreview, RadioPreview, FishingPreview, VirtualCatPreview } from '@/app/dev/preview/[name]/game-previews'
 import { TarotCardFace } from '@/components/games/tarot-cards'
 import { TAROT_CARDS } from '@/lib/tarot'
 import { JournalManager, JournalEditor } from '@/components/admin/journal-manager'
@@ -44,6 +44,8 @@ const PREVIEWS = [
   { name: 'tarot', label: '塔罗（前台）' },
   { name: 'puzzle', label: '照片拼图（前台）' },
   { name: 'radio', label: '调频（前台）' },
+  { name: 'fishing', label: '钓鱼（前台）' },
+  { name: 'virtual-cat', label: '电子猫（前台）' },
   { name: 'tarot-deck', label: '塔罗 · 22 张牌面' },
   { name: 'media', label: '媒体库' },
   { name: 'settings', label: '站点设置' },
@@ -154,6 +156,21 @@ export default function DevPreviewPage({ params }: { params: { name: string } })
       {name === 'radio' && (
         <AdminPage title="调频（前台）" description="预览数据 · 点歌台和树洞回音用的是假素材">
           <RadioPreview />
+        </AdminPage>
+      )}
+
+      {name === 'fishing' && (
+        <AdminPage title="钓鱼（前台）" description="预览数据 · 可以直接抛竿玩">
+          <FishingPreview />
+        </AdminPage>
+      )}
+
+      {name === 'virtual-cat' && (
+        <AdminPage
+          title="电子猫（前台）"
+          description="预览数据 · 会真的写 localStorage（这是同一个 slug 的存档）"
+        >
+          <VirtualCatPreview />
         </AdminPage>
       )}
 

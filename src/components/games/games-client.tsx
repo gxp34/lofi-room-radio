@@ -60,6 +60,16 @@ const GameRadio = dynamic(
   { ssr: false, loading: GameLoading },
 )
 
+const GameFishing = dynamic(
+  () => import('@/components/games/game-fishing').then((mod) => mod.GameFishing),
+  { ssr: false, loading: GameLoading },
+)
+
+const GameVirtualCat = dynamic(
+  () => import('@/components/games/game-virtual-cat').then((mod) => mod.GameVirtualCat),
+  { ssr: false, loading: GameLoading },
+)
+
 /**
  * 每个游戏最少需要这两个 prop；额外的素材 prop（照片、电台素材）
  * 都是可选的，各游戏自己兜默认值 —— 这样一张表就能装下所有游戏，
@@ -82,6 +92,8 @@ const GAME_COMPONENTS: Record<string, React.ComponentType<GameComponentProps>> =
   tarot: GameTarot,
   puzzle: GamePuzzle,
   radio: GameRadio,
+  fishing: GameFishing,
+  'virtual-cat': GameVirtualCat,
 }
 
 export function GamesClient({

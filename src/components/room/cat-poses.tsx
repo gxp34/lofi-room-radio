@@ -289,8 +289,12 @@ const POSES: Record<CatPose, React.ComponentType<PoseProps>> = {
  * 注意 mounted：姿势会受到「现在是不是凌晨」的影响，
  * 服务端和浏览器的时区不一定一样，直接算会造成 hydration 不一致。
  * 所以首屏先按默认姿势渲染，挂载之后再换成真实姿势。
+ *
+ * `pose` 是给电子猫留的口子：那只猫不读房间状态（灯、成就），
+ * 它按自己的饱食度 / 心情 / 亲密度决定姿势。
+ * 这里只复用**图画**，两边不共享任何状态。
  */
-export function CatArt({ className }: PoseProps) {
+export function CatArt({ className, pose: forcedPose }: PoseProps & { pose?: CatPose }) {
   const lights = useRoomStore((state) => state.lights)
   const unlocked = useAchievementStore((state) => state.unlocked)
 
@@ -298,9 +302,10 @@ export function CatArt({ className }: PoseProps) {
   React.useEffect(() => setMounted(true), [])
 
   const pose = React.useMemo<CatPose>(() => {
+    if (forcedPose) return forcedPose
     if (!mounted) return 'sitting'
     return pickCatPose({ lights, unlocked: Object.keys(unlocked) }).pose
-  }, [mounted, lights, unlocked])
+  }, [forcedPose, mounted, lights, unlocked])
 
   const Component = POSES[pose]
   return <Component className={className} />

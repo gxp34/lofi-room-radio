@@ -380,6 +380,22 @@ export const DEFAULT_GAMES: GameDef[] = [
     config: { min: 80, max: 108, step: 0.1 },
     sort: 60,
   },
+  {
+    slug: 'fishing',
+    name: '钓鱼',
+    description: '雨夜的池塘边。抛竿，等鱼影，咬钩的时候提竿。',
+    enabled: true,
+    config: { species: 6, weatherAffects: true },
+    sort: 70,
+  },
+  {
+    slug: 'virtual-cat',
+    name: '电子猫',
+    description: '掌机里养一只。会饿，会不高兴，也会长大。',
+    enabled: true,
+    config: { decayPerHour: { fullness: 4, mood: 3 }, maxLevel: 10 },
+    sort: 80,
+  },
 ]
 
 /* ==========================================================================
@@ -399,6 +415,8 @@ export const DEFAULT_ACHIEVEMENTS: AchievementDef[] = [
   { key: 'hidden_drawer', name: '隐藏抽屉的钥匙', description: '连续三天来看猫，猫给了你一把小钥匙。', icon: 'KeyRound', secret: true, sort: 100 },
   { key: 'photo_restored', name: '照片复原了', description: '把手帐里的一张照片拼回原样。', icon: 'Puzzle', secret: false, sort: 110 },
   { key: 'hidden_frequency', name: '107.9', description: '在调频里找到了那个不该存在的频道。', icon: 'Radio', secret: true, sort: 120 },
+  { key: 'rare_catch', name: '钓到了星光', description: '在池塘里钓上那条只在凌晨出现的鱼。', icon: 'Fish', secret: true, sort: 130 },
+  { key: 'cat_bond', name: '它认你了', description: '把电子猫的亲密度养满。', icon: 'Heart', secret: false, sort: 140 },
 ]
 
 /** 长按唱片机时调到的随机频道 */
