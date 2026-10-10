@@ -532,7 +532,8 @@ export function JournalEditor({ mode, entry, onSaved, onCancel }: JournalEditorP
       {mode === 'edit' && entry && (
         <p className="flex items-center gap-1.5 text-[11px] text-dust">
           <ShieldCheck className="h-3 w-3 text-lamp" aria-hidden />
-          上传前会在浏览器里重新编码：EXIF（拍摄时间、设备、**GPS 坐标**）会被剥掉，
+          上传前会在浏览器里重新编码：EXIF（拍摄时间、设备、
+          <strong className="font-normal text-paper/85">GPS 坐标</strong>）会被剥掉，
           同时压到长边 {JOURNAL_IMAGE_OPTIONS.maxEdge}px 并生成缩略图。
         </p>
       )}

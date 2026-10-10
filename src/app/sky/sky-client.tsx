@@ -417,16 +417,44 @@ export function SkyClient({ enabled }: SkyClientProps) {
           <MoonRiseSet date={scene?.date ?? null} latitude={params?.latitude ?? null} longitude={params?.longitude ?? null} />
         </section>
 
-        {/* ---- 行星（桌面端才显示，手机上整块不渲染）---- */}
-        {!simplified && (
-          <section className="rounded-xl border border-white/[0.07] bg-room/55 p-4 shadow-inset">
-            <p className="flex items-center gap-1.5 font-display text-[11px] uppercase tracking-[0.18em] text-dust">
-              <Sparkles className="h-3 w-3" aria-hidden />
-              行星
-            </p>
+        {/* ---- 行星 ----
+            原来这里是 `!simplified && (...)`，也就是手机上整块不渲染。
+            但需求里同时写了「移动端简化：只显示亮星、月亮、星座连线」和
+            「显示星座、亮星、月亮、行星位置」——
+            后一句是这一页的**内容要求**，前一句说的是**图上画多少**。
+            手机上不画行星是对的（那个圆盘本来就小），但"今晚哪几颗能看到"
+            是这一页最有用的信息，藏掉不合适。
+            所以现在手机上不画它们，但用一行横向小结列出来。 */}
+        <section className="rounded-xl border border-white/[0.07] bg-room/55 p-4 shadow-inset">
+          <p className="flex items-center gap-1.5 font-display text-[11px] uppercase tracking-[0.18em] text-dust">
+            <Sparkles className="h-3 w-3" aria-hidden />
+            行星
+          </p>
 
-            {scene ? (
-              <ul className="mt-3 space-y-2">
+          {scene ? (
+            <>
+              {/* 手机：横向紧凑小结。只给"看不看得见"，不挤方位和星等 */}
+              <ul className="mt-3 flex flex-wrap gap-1.5 lg:hidden">
+                {scene.planets.map((planet) => (
+                  <li
+                    key={planet.key}
+                    className="flex items-center gap-1.5 rounded-md border border-white/[0.07] bg-white/[0.02] px-2 py-1"
+                  >
+                    <span
+                      className="h-1.5 w-1.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: planet.color }}
+                      aria-hidden
+                    />
+                    <span className="font-display text-[11px] text-paper/85">{planet.name}</span>
+                    <span className="text-[10px] text-dust">
+                      {planet.visible ? `${planet.altitude.toFixed(0)}°` : '看不到'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* 桌面：完整的方位 + 星等 */}
+              <ul className="mt-3 hidden space-y-2 lg:block">
                 {scene.planets.map((planet) => (
                   <li key={planet.key} className="flex items-baseline justify-between gap-2">
                     <span className="flex items-center gap-2">
@@ -447,15 +475,16 @@ export function SkyClient({ enabled }: SkyClientProps) {
                   </li>
                 ))}
               </ul>
-            ) : (
-              <p className="mt-3 text-[11px] text-dust">算不出行星的位置。</p>
-            )}
+            </>
+          ) : (
+            <p className="mt-3 text-[11px] text-dust">算不出行星的位置。</p>
+          )}
 
-            <p className="mt-3 border-t border-white/[0.06] pt-2.5 text-[10px] leading-relaxed text-dust/80">
-              「离太阳太近」是指在地平线以上、但淹没在暮光里，肉眼找不到。
-            </p>
-          </section>
-        )}
+          <p className="mt-3 border-t border-white/[0.06] pt-2.5 text-[10px] leading-relaxed text-dust/80">
+            「离太阳太近」是指在地平线以上、但淹没在暮光里，肉眼找不到。
+            <span className="lg:hidden">手机这里只给高度角，方位和星等在宽屏上显示。</span>
+          </p>
+        </section>
 
         {/* ---- 日出日落 / 时辰 ---- */}
         <section className="rounded-xl border border-white/[0.07] bg-room/55 p-4 shadow-inset">

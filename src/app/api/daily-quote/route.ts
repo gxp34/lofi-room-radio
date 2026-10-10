@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 
 import { loadDailyQuote } from '@/lib/external/quotes'
 import { loadExternalSettings } from '@/lib/external/settings'
+import { estimateUtcOffsetSeconds } from '@/lib/external/sky'
+import { resolveWeatherLocation } from '@/lib/external/weather'
 
 /**
  * 每日一句。
@@ -20,7 +22,17 @@ export async function GET(request: Request) {
 
   try {
     const settings = await loadExternalSettings()
-    const quote = await loadDailyQuote({ enabled: settings.dailyQuoteEnabled, fresh })
+    const location = resolveWeatherLocation(settings)
+
+    /**
+     * 用城市经度估一个时区偏移，交给 loadDailyQuote 决定"今天"从几点开始。
+     * 不这么做的话服务器（UTC）会在早上 8 点给国内访客换句子。
+     */
+    const quote = await loadDailyQuote({
+      enabled: settings.dailyQuoteEnabled,
+      fresh,
+      utcOffsetSeconds: estimateUtcOffsetSeconds(location.lon),
+    })
 
     return NextResponse.json(quote, { headers: { 'cache-control': 'no-store' } })
   } catch (error) {

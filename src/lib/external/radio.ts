@@ -133,12 +133,21 @@ export function parsePlaylist(body: string): string | null {
  */
 export interface CustomChannelLine {
   name: string
+  /** 主地址 */
   endpoint: string
+  /** 备用地址（同一行里用空格或分号隔开写多个）。主地址挂了会自动往下试 */
+  alternates: string[]
   tags: string[]
   formatHint: RadioFormat | null
 }
 
-/** 解析后台那一坨文本。坏行直接跳过，不抛错 */
+/**
+ * 解析后台那一坨文本。坏行直接跳过，不抛错。
+ *
+ * 地址那一栏支持写多条：`名称 | 主地址 备用地址 | 标签`。
+ * 网络电台的地址经常换域名、挂线路，允许一行里写几个是这里最省事的容错 ——
+ * 比让站长自己发现挂了再去改要强。
+ */
 export function parseCustomChannels(text: string): CustomChannelLine[] {
   const out: CustomChannelLine[] = []
 
@@ -149,19 +158,28 @@ export function parseCustomChannels(text: string): CustomChannelLine[] {
 
     const parts = line.split('|').map((part) => part.trim())
     const name = parts[0]
-    const endpoint = parts[1]
+    const addressField = parts[1]
 
     // 名称和地址缺一不可
-    if (!name || !endpoint || !/^https?:\/\//i.test(endpoint)) continue
+    if (!name || !addressField) continue
+
+    // 地址栏里可以写多个：空白或分号分隔。只保留像 URL 的
+    const urls = addressField
+      .split(/[\s;]+/)
+      .map((item) => item.trim())
+      .filter((item) => /^https?:\/\//i.test(item))
+
+    if (urls.length === 0) continue
 
     out.push({
       name,
-      endpoint,
+      endpoint: urls[0],
+      alternates: urls.slice(1),
       tags: (parts[2] ?? '')
         .split(/[,，\s]+/)
         .map((tag) => tag.trim())
         .filter(Boolean),
-      formatHint: guessFormat(endpoint),
+      formatHint: guessFormat(urls[0]),
     })
   }
 
@@ -186,6 +204,7 @@ function customToStation(line: CustomChannelLine): RadioStation {
     tags: line.tags,
     source: 'custom' satisfies RadioSource,
     endpoint: line.endpoint,
+    alternates: line.alternates,
     formatHint: line.formatHint,
     coverUrl: null,
   }
@@ -235,6 +254,8 @@ function somafmToStation(channel: SomaFmChannel): RadioStation | null {
     tags: [genre ?? '', 'SomaFM'].filter(Boolean),
     source: 'somafm' satisfies RadioSource,
     endpoint,
+    // SomaFM 自己会做负载均衡（.pls 里就有好几个 File），不需要我们写备用
+    alternates: [],
     formatHint: format,
     // SomaFM 的封面是 png/jpg 的固定路径
     coverUrl: channel.image ? `https://somafm.com${channel.image}` : null,
@@ -377,37 +398,37 @@ async function probeStream(url: string): Promise<{ throttled: boolean }> {
 }
 
 /**
- * 把一个频道的 endpoint 解析成真正能交给 <audio> 的地址。
+ * 试**一条**地址：直连就直接用，播放列表就解析 + 探测限流。
  *
- * 分三种情况：
- *   1. endpoint 本身就是流（直连地址，或者 HLS 的 .m3u8）→ 直接返回
- *   2. endpoint 是 .pls / .m3u → 拉下来解析，再探一下有没有被限流
- *   3. 解析失败 / 被限流 → ok:false，界面上就是一句人话
+ * @param index 这条地址在本频道里的序号，只用来做缓存键
  */
-export async function resolveStream(
+async function resolveOne(
+  candidate: string,
   station: RadioStation,
-  options: { fresh?: boolean } = {},
+  index: number,
+  options: { fresh?: boolean },
 ): Promise<ResolvedStream> {
-  // ---- 1. 不需要解析 ----
-  if (!isPlaylistUrl(station.endpoint)) {
+  // ---- 直连（或者 HLS 的 .m3u8）----
+  if (!isPlaylistUrl(candidate)) {
     return {
       ok: true,
-      streamUrl: station.endpoint,
-      format: guessFormat(station.endpoint) ?? station.formatHint,
+      streamUrl: candidate,
+      format: guessFormat(candidate) ?? station.formatHint,
       error: null,
     }
   }
 
-  const cacheKey = `${PLAYLIST_CACHE_KEY}:${station.id}`
+  // 缓存按「频道 + 第几条地址」算 —— 只按频道算的话，
+  // 主地址和备用地址会互相覆盖缓存
+  const cacheKey = `${PLAYLIST_CACHE_KEY}:${station.id}:${index}`
 
   if (!options.fresh) {
     const hit = readMemory<ResolvedStream>(cacheKey, CACHE_TTL_MS)
     if (hit) return hit
   }
 
-  // ---- 2. 解析播放列表 ----
   try {
-    const response = await fetchWithTimeout(station.endpoint, FETCH_TIMEOUT_MS, {
+    const response = await fetchWithTimeout(candidate, FETCH_TIMEOUT_MS, {
       headers: { accept: '*/*' },
     })
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -418,11 +439,10 @@ export async function resolveStream(
 
     const format = guessFormat(url) ?? station.formatHint
 
-    // ---- 3. 探一下有没有被限流 ----
     const probe = await probeStream(url)
     if (probe.throttled) {
-      // 注意**不缓存**这个结果：限流是一时的，缓存一小时等于让这个台
-      // 一小时内都点不动，而它可能十秒后就恢复了
+      // **不缓存**：限流是一时的，缓存一小时等于让这个台一小时内都点不动，
+      // 而它可能十秒后就恢复了
       return {
         ok: false,
         streamUrl: null,
@@ -432,17 +452,44 @@ export async function resolveStream(
     }
 
     const resolved: ResolvedStream = { ok: true, streamUrl: url, format, error: null }
-
     writeMemory(cacheKey, resolved)
     return resolved
   } catch (error) {
-    console.warn(`[radio] 解析 ${station.name} 的播放列表失败：`, error)
-
-    return {
-      ok: false,
-      streamUrl: null,
-      format: null,
-      error: '信号丢失',
-    }
+    console.warn(`[radio] 解析 ${station.name} 的第 ${index + 1} 条地址失败：`, error)
+    return { ok: false, streamUrl: null, format: null, error: '信号丢失' }
   }
+}
+
+/**
+ * 把一个频道的地址解析成真正能交给 <audio> 的地址。
+ *
+ * **按顺序试主地址和备用地址**，第一条成功就用它。
+ * 网络电台的地址会换域名、会挂线路，后台一行里可以写好几条，
+ * 这样挂一条不至于整个台点不动。
+ *
+ * 全都失败时返回最后一条的错误（比笼统的「信号丢失」更有用 ——
+ * 如果是因为被限流，那句提示会保留下来）。
+ */
+export async function resolveStream(
+  station: RadioStation,
+  options: { fresh?: boolean } = {},
+): Promise<ResolvedStream> {
+  const candidates = [station.endpoint, ...(station.alternates ?? [])]
+
+  let last: ResolvedStream = { ok: false, streamUrl: null, format: null, error: '信号丢失' }
+
+  for (let index = 0; index < candidates.length; index++) {
+    const candidate = candidates[index]
+    if (!candidate) continue
+
+    const result = await resolveOne(candidate, station, index, options)
+    if (result.ok) return result
+
+    last = result
+
+    // 被限流的话不用再试备用地址了：限流是按 IP 的，换线路也一样
+    if (result.error?.includes('挤满')) return result
+  }
+
+  return last
 }

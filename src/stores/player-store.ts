@@ -188,6 +188,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   play: () => {
+    /**
+     * 直播模式下不看歌单。
+     *
+     * 原来这里第一行是 `if (get().tracks.length === 0) return`，
+     * 于是"还没传过歌的站"在 /radio 点播放**完全没反应** ——
+     * 直播的音源在 liveStation 里，本来就与歌单无关。
+     * 顺手把 streamError 清掉：能重新播就说明"信号丢失"已经不成立了。
+     */
+    if (get().liveStation) {
+      set({ isPlaying: true, streamError: null })
+      return
+    }
+
     if (get().tracks.length === 0) return
     if (get().currentIndex < 0) {
       set({ currentIndex: 0 })
@@ -198,6 +211,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   pause: () => set({ isPlaying: false }),
 
   toggle: () => {
+    // 同上：直播时不依赖歌单，也就不会因为"歌单是空的"按不动
+    if (get().liveStation) {
+      set({ isPlaying: !get().isPlaying, streamError: null })
+      return
+    }
+
     if (get().tracks.length === 0) return
     if (get().currentIndex < 0) {
       get().playTrackAt(0)

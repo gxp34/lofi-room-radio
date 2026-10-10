@@ -88,7 +88,9 @@ export default async function SkyPage() {
         </p>
         <p className="mt-2 flex max-w-2xl items-start gap-1.5 text-[11px] leading-relaxed text-dust">
           <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-lamp" aria-hidden />
-          手机上只留亮星、月亮和星座连线；行星、星座名和方位刻度会在宽屏上才出现。
+          手机上图里只画亮星、月亮和星座连线，
+          <strong className="font-normal text-paper/85">行星和星座名不画在图上</strong>
+          —— 但下面照样有行星和这一晚的时间，一个都没少。
           天黑之后打开这一页效果最好。
         </p>
       </header>

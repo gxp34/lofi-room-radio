@@ -5,6 +5,9 @@
 
 # Next.js
 /.next/
+# 开发服务器的构建产物（见 next.config.mjs：和 /next/ 分开是为了
+# 避免 next dev 与 next build 共写一个目录把缓存搞坏）
+/.next-dev/
 /out/
 /build
 next-env.d.ts

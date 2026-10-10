@@ -499,7 +499,9 @@ export function SettingsForm({ initial }: { initial: SiteSettings }) {
               </div>
 
               <p className="text-[11px] leading-relaxed text-dust">
-                日出日落和月相是**本地算的**（suncalc），不依赖网络 ——
+                日出日落和月相是
+                <strong className="font-normal text-paper/85">本地算的</strong>
+                （suncalc），不依赖网络 ——
                 所以就算天气接口挂了，时间那部分照样是准的。
               </p>
             </div>
@@ -510,7 +512,9 @@ export function SettingsForm({ initial }: { initial: SiteSettings }) {
             <div className="min-w-0">
               <p className="text-sm font-medium text-paper/90">每日一句</p>
               <p className="mt-0.5 text-[11px] leading-relaxed text-dust">
-                来自一言（Hitokoto），服务端**每天只抓一次**。抓不到就用内置的 20 句。
+                来自一言（Hitokoto），服务端
+                <strong className="font-normal text-paper/85">每天只抓一次</strong>
+                。抓不到就用内置的 20 句。
               </p>
             </div>
             <Switch
@@ -617,7 +621,9 @@ export function SettingsForm({ initial }: { initial: SiteSettings }) {
               </Field>
 
               <p className="text-[11px] leading-relaxed text-dust">
-                SomaFM 的几十个频道是**自动**从它的公开目录拉的，不用在这里写。
+                SomaFM 的几十个频道是
+                <strong className="font-normal text-paper/85">自动</strong>
+                从它的公开目录拉的，不用在这里写。
                 下面只填它没有的（中文台为主）。
                 地址会失效 —— 失效了改这里就行，不用重新部署。
               </p>

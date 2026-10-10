@@ -422,6 +422,17 @@ export function AudioEngine() {
       className="hidden"
       aria-hidden
       onPlay={countPlay}
+      /**
+       * 真的开始出声了 → 把「信号丢失」清掉。
+       *
+       * 这是最可靠的清除时机：不是"用户点了播放"，而是"音频真的在走"。
+       * 少了这一步的话，一次瞬时失败之后声音恢复了、那行字还挂在界面上。
+       */
+      onPlaying={() => {
+        if (usePlayerStore.getState().streamError) {
+          usePlayerStore.getState().setStreamError(null)
+        }
+      }}
       onTimeUpdate={(event) => {
         const audio = event.currentTarget
         usePlayerStore.getState().syncProgress(audio.currentTime, audio.duration)

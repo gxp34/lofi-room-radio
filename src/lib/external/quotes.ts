@@ -52,10 +52,22 @@ export const LOCAL_QUOTES: Array<{ text: string; from: string | null }> = [
 ]
 
 /** 服务器当地日期（YYYY-MM-DD） */
-export function serverDayKey(date = new Date()): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
+/**
+ * 「今天」是哪一天 —— 按**站点所在城市**的当地日期算，不是服务器的。
+ *
+ * ⚠️ 这里踩过一次：原来直接用 `date.getFullYear()/getMonth()/getDate()`，
+ * 那是**服务器时区**的日期。Vercel 跑在 UTC，于是国内访客看到的
+ * "今日一句"是在**早上 8 点**换的，不是零点。
+ * （和天空时段那个 bug 同一类：服务器本地时间不等于访客的本地时间。）
+ *
+ * @param utcOffsetSeconds 城市相对 UTC 的偏移秒数，见 sky.ts 的 estimateUtcOffsetSeconds
+ */
+export function serverDayKey(date = new Date(), utcOffsetSeconds = 0): string {
+  // 把绝对时刻挪到"城市当地"，然后用 UTC 的那套取值
+  const local = new Date(date.getTime() + utcOffsetSeconds * 1000)
+  const y = local.getUTCFullYear()
+  const m = String(local.getUTCMonth() + 1).padStart(2, '0')
+  const d = String(local.getUTCDate()).padStart(2, '0')
   return `${y}-${m}-${d}`
 }
 
@@ -78,9 +90,17 @@ interface HitokotoResponse {
  * 拿今天这一句。
  *
  * 永远返回一个对象，永不抛错 —— 调用方不需要 try。
+ *
+ * @param options.utcOffsetSeconds 站点城市的时区偏移。决定"今天"从几点开始，
+ *        不传就按 UTC（也就是服务器时区）—— 那只在一种情况下是对的：
+ *        站点确实在 UTC 时区。
  */
-export async function loadDailyQuote(options: { enabled: boolean; fresh?: boolean }): Promise<DailyQuote> {
-  const day = serverDayKey()
+export async function loadDailyQuote(options: {
+  enabled: boolean
+  fresh?: boolean
+  utcOffsetSeconds?: number
+}): Promise<DailyQuote> {
+  const day = serverDayKey(new Date(), options.utcOffsetSeconds ?? 0)
 
   // ---- 1. 后台手动覆盖优先 ----
   const override = await readSetting<string>(OVERRIDE_KEY)
