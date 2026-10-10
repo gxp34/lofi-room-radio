@@ -1,7 +1,11 @@
 'use client'
 
+import * as React from 'react'
+
 import { RoomBands } from '@/components/room/room-bands'
 import { RoomPanorama } from '@/components/room/room-panorama'
+import { SKY_PHASE_META } from '@/lib/external/sky-meta'
+import { useRoomStore } from '@/stores/room-store'
 
 /**
  * 房间。
@@ -24,6 +28,18 @@ import { RoomPanorama } from '@/components/room/room-panorama'
  * 卡片负责「一眼看清有哪些东西、每个是什么」。两份都在，不冲突。
  */
 export function RoomScene() {
+  /**
+   * 一天里的时段 → 房间上盖一层什么颜色的光。
+   *
+   * 盖在**最外层**而不是画进全景里：这样不用碰那些手工对齐的家具坐标，
+   * 而且它是一层纯粹的 filter: 色调，关灯、跳闸那些逻辑完全不受影响。
+   *
+   * skyPhase 拿不到（天气功能关着 / 还没请求回来）时是 null，
+   * 这一层就不渲染 —— 房间保持原本的夜色。
+   */
+  const skyPhase = useRoomStore((state) => state.ambient.skyPhase)
+  const meta = skyPhase ? SKY_PHASE_META[skyPhase] : null
+
   return (
     <>
       {/* 只在**手机**上（< 640px）把房间加宽到 185%，装在横向滚动容器里。
@@ -31,8 +47,17 @@ export function RoomScene() {
           够看清也够点；再加宽反而要滑很久，得不偿失。
           注意 cqw 是相对**房间自己的宽度**算的，所以加宽之后物件会同比放大。 */}
       <div className="overflow-x-auto sm:overflow-visible">
-        <div className="w-[185%] sm:w-full">
+        <div className="relative w-[185%] sm:w-full">
           <RoomPanorama />
+
+          {/* 时段色偏：清晨偏蓝、午后偏暖、黄昏偏橙、深夜压暗 */}
+          {meta && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 rounded-[inherit] transition-colors duration-1000"
+              style={{ backgroundColor: meta.tint, opacity: meta.tintOpacity }}
+            />
+          )}
         </div>
       </div>
 

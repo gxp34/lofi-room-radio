@@ -2,7 +2,7 @@ import { SettingsForm } from '@/components/admin/settings-form'
 import { AdminPage, EmptyState } from '@/components/admin/ui'
 import { DEFAULT_SITE_SETTINGS } from '@/lib/constants'
 import { isSupabaseConfigured } from '@/lib/env'
-import { settingArray, settingBoolean, settingString, settingsToMap } from '@/lib/mappers'
+import { settingArray, settingBoolean, settingNumber, settingString, settingsToMap } from '@/lib/mappers'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import type { SiteSettings, SocialLink } from '@/types'
 import type { Tables } from '@/types/database'
@@ -98,5 +98,12 @@ function mergeSettings(
     ),
     musicNightTag: settingString(map, 'music_night_tag', fallback.musicNightTag),
     shelfNote: settingString(map, 'shelf_note', fallback.shelfNote),
+    // ---- 外部数据源（规则和 room-provider 的 mergeSiteSettings 一致）----
+    weatherEnabled: settingBoolean(map, 'weather_enabled', fallback.weatherEnabled),
+    weatherCity: settingString(map, 'weather_city', '') || null,
+    weatherLat: settingNumber(map, 'weather_lat'),
+    weatherLon: settingNumber(map, 'weather_lon'),
+    dailyQuoteEnabled: settingBoolean(map, 'daily_quote_enabled', fallback.dailyQuoteEnabled),
+    dailyQuoteOverride: settingString(map, 'daily_quote_override', '') || null,
   }
 }

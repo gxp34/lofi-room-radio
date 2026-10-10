@@ -275,5 +275,24 @@ export function settingArray<T>(map: Record<string, Json>, key: string, fallback
   return Array.isArray(value) ? (value as T[]) : fallback
 }
 
+/**
+ * 从设置里取一个可选的数字（取不到返回 null，**不是** fallback）。
+ *
+ * 为什么单独有这个：经纬度这类值「没填」和「填了 0」是两回事
+ * （经度 0 是格林尼治，是个合法的值）。所以缺行时返回 null，
+ * 让调用方去接环境变量的兜底值，而不是硬塞一个默认纬度进去。
+ *
+ * 数据库里存过 number（后台升级前的写法），表单存的是字符串，两种都认。
+ */
+export function settingNumber(map: Record<string, Json>, key: string): number | null {
+  const value = map[key]
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  return null
+}
+
 /** 只是为了让类型检查器知道 Database 被用到了（表名补全依赖它） */
 export type Schema = Database['public']

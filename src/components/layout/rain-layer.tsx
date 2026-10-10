@@ -25,6 +25,8 @@ const DROPS = Array.from({ length: 48 }, (_, i) => ({
 }))
 
 const RAIN_CONFIG = {
+  // 雨停了：一条雨丝都不画（真拿到天气且是晴天时才会走到这里）
+  none: { count: 0, speed: 1, opacity: 0 },
   light: { count: 22, speed: 1.6, opacity: 0.6 },
   normal: { count: 34, speed: 1, opacity: 1 },
   heavy: { count: 48, speed: 0.62, opacity: 1.35 },
@@ -33,6 +35,9 @@ const RAIN_CONFIG = {
 export function RainLayer() {
   const rain = useRoomStore((state) => state.ambient.rain)
   const config = RAIN_CONFIG[rain]
+
+  // 雨停的时候整层都不渲染，省掉 forty 多个 span 的合成开销
+  if (config.count === 0) return null
 
   return (
     <div

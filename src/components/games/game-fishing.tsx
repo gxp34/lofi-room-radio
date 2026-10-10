@@ -224,7 +224,7 @@ export function GameFishing({ highScore, reportScore }: GameFishingProps) {
                 : '这一竿结束了'
       }
       highScore={Math.max(highScore, progress.done)}
-      status={`${rain === 'heavy' ? '大雨' : rain === 'light' ? '小雨' : '中雨'} · ${deepNight ? '凌晨' : '夜里'}`}
+      status={`${RAIN_LABEL[rain]} · ${deepNight ? '凌晨' : '夜里'}`}
       onRestart={phase === 'idle' ? undefined : () => {
         clearTimers()
         setPhase('idle')
@@ -335,7 +335,7 @@ export function GameFishing({ highScore, reportScore }: GameFishingProps) {
           {/* 场景角标 */}
           <span className="absolute bottom-2 left-3 flex items-center gap-1 font-display text-[10px] text-dust/70">
             <CloudRain className="h-2.5 w-2.5" />
-            {rain === 'heavy' ? '大雨' : rain === 'light' ? '小雨' : '中雨'}
+            {RAIN_LABEL[rain]}
           </span>
         </div>
 
@@ -438,6 +438,14 @@ const AREA_RAIN = [8, 19, 31, 44, 57, 68, 79, 91].map((left, index) => ({
   left,
   delay: index * 0.23,
 }))
+
+/** 雨势的中文（雨停了也是一个状态，不能显示成"中雨"） */
+const RAIN_LABEL: Record<string, string> = {
+  none: '雨停了',
+  light: '小雨',
+  normal: '中雨',
+  heavy: '大雨',
+}
 
 /** 现在是不是凌晨 0–5 点。只在客户端调用 */
 function isDeepNightLocal(): boolean {

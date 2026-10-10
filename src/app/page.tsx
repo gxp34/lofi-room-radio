@@ -7,8 +7,10 @@ import { ArrowRight, CloudRain, Hand, Radio } from 'lucide-react'
 import { Icon } from '@/components/icon'
 import { useRoom } from '@/components/providers/room-provider'
 import { AchievementBoard } from '@/components/room/achievement-board'
+import { DailyQuoteCard } from '@/components/room/daily-quote'
 import { RoomScene } from '@/components/room/room-scene'
 import { SoundToggle } from '@/components/room/sound-toggle'
+import { WeatherPanel } from '@/components/room/weather-panel'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NAV_ITEMS, ROOM_OBJECTS } from '@/lib/constants'
@@ -86,6 +88,15 @@ export default function HomePage() {
           {settings.announcement}
         </p>
       )}
+
+      {/* ================= 窗外 · 今日一句 =================
+          两个都从我们自己的 Route Handler 取数（前端不直连外部服务），
+          拿不到就各自降级，所以这一块永远不会是空白。
+          房间的雨势和光线也由 WeatherPanel 写进 store。 */}
+      <section className="mb-8 grid gap-4 sm:grid-cols-2">
+        <WeatherPanel />
+        <DailyQuoteCard />
+      </section>
 
       {/* ================= 房间全景 ================= */}
       <section aria-labelledby="room-heading" className="mb-10">

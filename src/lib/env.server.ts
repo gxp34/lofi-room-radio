@@ -53,3 +53,34 @@ export const TREEHOLE_DAILY_LIMIT = pick(
 
 /** 服务端能不能用「超级权限」（上传、私密音频签名、审核等都要它） */
 export const hasServiceRole = Boolean(SUPABASE_SERVICE_ROLE_KEY)
+
+/* --------------------------------------------------------------------------
+   天气（Open-Meteo，免费无密钥）
+   -------------------------------------------------------------------------- */
+
+/**
+ * 固定城市的经纬度。
+ *
+ * 这几项**只是兜底**：真正生效的值优先取后台「站点设置」里的，
+ * 只有后台没填（比如刚部署、迁移还没跑）才用这里的默认值。
+ * 所以改城市不用重新部署 —— 去后台改就行。
+ *
+ * 默认给了上海：不填也不会算出奇怪的日出日落。
+ */
+export const WEATHER_FALLBACK_LAT = pick(
+  z.coerce.number().min(-90).max(90),
+  process.env.WEATHER_LAT,
+  31.2304,
+)
+
+export const WEATHER_FALLBACK_LON = pick(
+  z.coerce.number().min(-180).max(180),
+  process.env.WEATHER_LON,
+  121.4737,
+)
+
+export const WEATHER_FALLBACK_CITY = pick(
+  z.string().min(1).max(40),
+  process.env.WEATHER_CITY,
+  '上海',
+)

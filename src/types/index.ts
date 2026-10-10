@@ -480,6 +480,18 @@ export interface SiteSettings {
   musicCopyrightNotice: string
   musicNightTag: string
   shelfNote: string
+  /* ---------------- 外部数据源（天气 / 每日一句） ---------------- */
+  /** 实时天气开关。关掉 → 房间回到默认的雨夜，不发任何外部请求 */
+  weatherEnabled: boolean
+  /** 城市名，只用于显示 */
+  weatherCity: string | null
+  /** 经纬度。留空就用环境变量 WEATHER_LAT / WEATHER_LON 的兜底值 */
+  weatherLat: number | null
+  weatherLon: number | null
+  /** 每日一句开关 */
+  dailyQuoteEnabled: boolean
+  /** 后台手动指定的今日一句；填了就压过自动抓的那句 */
+  dailyQuoteOverride: string | null
 }
 
 /* ==========================================================================

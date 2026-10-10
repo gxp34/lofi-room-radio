@@ -26,6 +26,33 @@ import { describeError, guardAdmin } from './guard'
    校验：前台显示什么，这里就限制什么，避免一张超长公告把导航挤爆
    -------------------------------------------------------------------------- */
 
+/**
+ * 经纬度的输入。
+ *
+ * 在表单里是文本框（"留空就用环境变量的兜底值"比一个必须填的数字输入更好用），
+ * 所以这里按字符串收，再在 saveSettings 里转成 number | null。
+ * 范围校验放在这儿，免得把一个手滑打出来的 999 存进数据库，
+ * 然后 suncalc 拿它算出一堆 Invalid Date。
+ */
+const optionalCoordinate = (min: number, max: number, label: string) =>
+  z
+    .string()
+    .trim()
+    .optional()
+    .default('')
+    .refine((value) => {
+      if (value === '') return true
+      const parsed = Number(value)
+      return Number.isFinite(parsed) && parsed >= min && parsed <= max
+    }, `${label}要填 ${min} 到 ${max} 之间的数字，或者留空`)
+
+/** '' / 乱填 → null（交给 env.server 的兜底值） */
+function parseCoordinate(value: string): number | null {
+  if (!value || value.trim() === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 const socialLinkSchema = z.object({
   label: z.string().trim().min(1, '社交链接要有名字').max(40, '名字最多 40 字'),
   href: z.string().trim().min(1, '社交链接要有地址').max(400, '地址太长了'),
@@ -48,6 +75,20 @@ const settingsSchema = z.object({
   musicCopyrightNotice: z.string().trim().max(500, '版权提醒最多 500 字'),
   musicNightTag: z.string().trim().max(20, '深夜歌单标签最多 20 字'),
   shelfNote: z.string().trim().max(300, '唱片架那句话最多 300 字'),
+
+  /* ---------------- 外部数据源 ---------------- */
+
+  weatherEnabled: z.boolean().default(true),
+  weatherCity: z.string().trim().max(40, '城市名最多 40 字').optional().default(''),
+  weatherLat: optionalCoordinate(-90, 90, '纬度'),
+  weatherLon: optionalCoordinate(-180, 180, '经度'),
+  dailyQuoteEnabled: z.boolean().default(true),
+  dailyQuoteOverride: z
+    .string()
+    .trim()
+    .max(200, '手动填的句子最多 200 字')
+    .optional()
+    .default(''),
   socialLinks: z.array(socialLinkSchema).max(20, '社交链接最多 20 条'),
   backgroundAudio: z.string().trim().max(400, '背景音地址太长了').nullable(),
 })
@@ -111,6 +152,22 @@ function toRows(settings: SiteSettings): SettingRow[] {
     { key: 'music_copyright_notice', value: settings.musicCopyrightNotice, updated_at: updatedAt },
     { key: 'music_night_tag', value: settings.musicNightTag, updated_at: updatedAt },
     { key: 'shelf_note', value: settings.shelfNote, updated_at: updatedAt },
+
+    /* ---------------- 外部数据源 ----------------
+       注意：**不写** weather_cache / daily_quote 这两个 key ——
+       那是运行时的缓存，由 lib/external 自己维护。
+       后台表单只负责开关和参数，别把缓存覆盖掉。
+       （daily_quote_override 不一样，它就是给后台改的。） */
+    { key: 'weather_enabled', value: settings.weatherEnabled, updated_at: updatedAt },
+    { key: 'weather_city', value: settings.weatherCity ?? '', updated_at: updatedAt },
+    { key: 'weather_lat', value: settings.weatherLat, updated_at: updatedAt },
+    { key: 'weather_lon', value: settings.weatherLon, updated_at: updatedAt },
+    { key: 'daily_quote_enabled', value: settings.dailyQuoteEnabled, updated_at: updatedAt },
+    {
+      key: 'daily_quote_override',
+      value: settings.dailyQuoteOverride ?? '',
+      updated_at: updatedAt,
+    },
   ]
 
   return rows
@@ -155,6 +212,12 @@ export async function saveSettings(input: SettingsInput): Promise<ActionResult<u
     musicCopyrightNotice: data.musicCopyrightNotice,
     musicNightTag: data.musicNightTag,
     shelfNote: data.shelfNote,
+    weatherEnabled: data.weatherEnabled,
+    weatherCity: data.weatherCity.length > 0 ? data.weatherCity : null,
+    weatherLat: parseCoordinate(data.weatherLat),
+    weatherLon: parseCoordinate(data.weatherLon),
+    dailyQuoteEnabled: data.dailyQuoteEnabled,
+    dailyQuoteOverride: data.dailyQuoteOverride.length > 0 ? data.dailyQuoteOverride : null,
     socialLinks: data.socialLinks.map((link) => ({
       label: link.label,
       href: link.href,

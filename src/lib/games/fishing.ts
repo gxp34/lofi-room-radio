@@ -133,11 +133,11 @@ export const FISH_SPECIES: FishSpecies[] = [
 /**
  * 雨势。
  *
- * 注意**没有「不下雨」**：这个站设定就是「窗外在下雨」，
- * 房间那边的 RainLevel 也只有 light / normal / heavy 三档。
- * 所以"天气影响概率"体现在**雨大雨小**上，不是"下不下"。
+ * 四档，包含 'none'（雨停了）——房间那边接上实时天气之后，
+ * 晴天真的会让雨停，钓鱼也就跟着变成"不下雨的池塘"。
+ * 拿不到天气时房间会退回 'normal'，所以这个站默认的样子还是雨夜。
  */
-export type FishingRain = 'light' | 'normal' | 'heavy'
+export type FishingRain = 'none' | 'light' | 'normal' | 'heavy'
 
 /** 时间 / 天气对权重的影响，写在图鉴里给玩家看 */
 export interface FishingConditions {
@@ -153,9 +153,23 @@ export function availableFish(
 ): Array<{ fish: FishSpecies; weight: number }> {
   const rows: Array<{ fish: FishSpecies; weight: number }> = []
 
-  // 雨越大，喜欢雨的越活跃、其它的越难开口
-  const boost = conditions.rain === 'heavy' ? 3 : conditions.rain === 'light' ? 1.4 : 1
-  const damp = conditions.rain === 'heavy' ? 0.6 : conditions.rain === 'light' ? 0.85 : 1
+  // 雨越大，喜欢雨的越活跃、其它的越难开口；雨停了就反过来
+  const boost =
+    conditions.rain === 'heavy'
+      ? 3
+      : conditions.rain === 'light'
+        ? 1.4
+        : conditions.rain === 'normal'
+          ? 1
+          : 0.7
+  const damp =
+    conditions.rain === 'heavy'
+      ? 0.6
+      : conditions.rain === 'light'
+        ? 0.85
+        : conditions.rain === 'normal'
+          ? 1
+          : 1.15
 
   for (const fish of species) {
     // 星光鱼只在凌晨；别的鱼全天都有

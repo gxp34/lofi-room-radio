@@ -13,6 +13,7 @@ import {
   rowToRoomEvent,
   settingArray,
   settingBoolean,
+  settingNumber,
   settingString,
   settingsToMap,
 } from '@/lib/mappers'
@@ -512,6 +513,16 @@ function mergeSiteSettings(
     ),
     musicNightTag: settingString(map, 'music_night_tag', fallback.musicNightTag),
     shelfNote: settingString(map, 'shelf_note', fallback.shelfNote),
+    // ---- 外部数据源 ----
+    // 开关走 settingBoolean（缺行 → 返回 fallback，也就是默认 true）。
+    // 经纬度在数据库里可能是 number（后台存过）也可能是 '' （表单清空过），
+    // 所以用 settingNumber 兜两种，认不出就 null，让 env.server 的兜底值接手。
+    weatherEnabled: settingBoolean(map, 'weather_enabled', fallback.weatherEnabled),
+    weatherCity: settingString(map, 'weather_city', '') || null,
+    weatherLat: settingNumber(map, 'weather_lat'),
+    weatherLon: settingNumber(map, 'weather_lon'),
+    dailyQuoteEnabled: settingBoolean(map, 'daily_quote_enabled', fallback.dailyQuoteEnabled),
+    dailyQuoteOverride: settingString(map, 'daily_quote_override', '') || null,
   }
 }
 

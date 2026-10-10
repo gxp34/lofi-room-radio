@@ -3,6 +3,7 @@
 import * as React from 'react'
 import {
   CloudRain,
+  Globe,
   Loader2,
   MessageCircleHeart,
   Music4,
@@ -58,6 +59,14 @@ interface FormState {
   shelfNote: string
   socialLinks: SocialLinkRow[]
   backgroundAudio: string
+  /* ---------------- 外部数据源 ---------------- */
+  weatherEnabled: boolean
+  weatherCity: string
+  /** 表单里是字符串：留空 = 用环境变量的兜底值（比强制填数字好用） */
+  weatherLat: string
+  weatherLon: string
+  dailyQuoteEnabled: boolean
+  dailyQuoteOverride: string
 }
 
 /** SiteSettings（可空字段用 null）→ 表单 state（一律用空字符串，受控输入框更好用） */
@@ -82,6 +91,12 @@ function toFormState(settings: SiteSettings): FormState {
       icon: link.icon ?? '',
     })),
     backgroundAudio: settings.backgroundAudio ?? '',
+    weatherEnabled: settings.weatherEnabled,
+    weatherCity: settings.weatherCity ?? '',
+    weatherLat: settings.weatherLat === null ? '' : String(settings.weatherLat),
+    weatherLon: settings.weatherLon === null ? '' : String(settings.weatherLon),
+    dailyQuoteEnabled: settings.dailyQuoteEnabled,
+    dailyQuoteOverride: settings.dailyQuoteOverride ?? '',
   }
 }
 
@@ -170,6 +185,14 @@ export function SettingsForm({ initial }: { initial: SiteSettings }) {
         shelfNote: values.shelfNote,
         socialLinks,
         backgroundAudio: values.backgroundAudio.trim().length > 0 ? values.backgroundAudio : null,
+        // 经纬度原样传字符串，格式和范围的校验在 zod schema 里（schema 会把
+        // 不合法的拦下来并给出中文提示，这里不重复判一遍）
+        weatherEnabled: values.weatherEnabled,
+        weatherCity: values.weatherCity,
+        weatherLat: values.weatherLat,
+        weatherLon: values.weatherLon,
+        dailyQuoteEnabled: values.dailyQuoteEnabled,
+        dailyQuoteOverride: values.dailyQuoteOverride,
       }
 
       const result = await saveSettings(payload)
@@ -392,6 +415,107 @@ export function SettingsForm({ initial }: { initial: SiteSettings }) {
               />
             </Field>
           </div>
+        </div>
+      </Section>
+
+      {/* ---------------- 外部数据源 ---------------- */}
+      <Section
+        title="外部数据源"
+        description="天气和每日一句都走服务端，免费无密钥。关掉或连不上时前台会自己降级，不影响开灯、日记、树洞、音乐、小游戏。"
+        actions={<Globe className="h-4 w-4 text-dust" aria-hidden />}
+      >
+        <div className="space-y-4">
+          {/* ---- 天气 ---- */}
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.015] p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-paper/90">实时天气</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-dust">
+                数据来自 Open-Meteo（免费、不用密钥），服务端缓存 30 分钟。
+                房间的雨势和光线会跟着走。关掉之后房间固定是雨夜。
+              </p>
+            </div>
+            <Switch
+              checked={values.weatherEnabled}
+              onCheckedChange={(checked) => patch({ weatherEnabled: checked })}
+              aria-label="实时天气开关"
+            />
+          </div>
+
+          {values.weatherEnabled && (
+            <div className="space-y-3 rounded-xl border border-white/[0.07] bg-white/[0.015] p-3">
+              <Field label="城市名" htmlFor="weather-city" hint="只用于显示，不影响取数。">
+                <Input
+                  id="weather-city"
+                  value={values.weatherCity}
+                  onChange={(event) => patch({ weatherCity: event.target.value })}
+                  placeholder="上海"
+                />
+              </Field>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field
+                  label="纬度"
+                  htmlFor="weather-lat"
+                  hint="留空就用环境变量 WEATHER_LAT。"
+                >
+                  <Input
+                    id="weather-lat"
+                    value={values.weatherLat}
+                    onChange={(event) => patch({ weatherLat: event.target.value })}
+                    placeholder="31.2304"
+                    inputMode="decimal"
+                  />
+                </Field>
+                <Field
+                  label="经度"
+                  htmlFor="weather-lon"
+                  hint="留空就用环境变量 WEATHER_LON。"
+                >
+                  <Input
+                    id="weather-lon"
+                    value={values.weatherLon}
+                    onChange={(event) => patch({ weatherLon: event.target.value })}
+                    placeholder="121.4737"
+                    inputMode="decimal"
+                  />
+                </Field>
+              </div>
+
+              <p className="text-[11px] leading-relaxed text-dust">
+                日出日落和月相是**本地算的**（suncalc），不依赖网络 ——
+                所以就算天气接口挂了，时间那部分照样是准的。
+              </p>
+            </div>
+          )}
+
+          {/* ---- 每日一句 ---- */}
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.015] p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-paper/90">每日一句</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-dust">
+                来自一言（Hitokoto），服务端**每天只抓一次**。抓不到就用内置的 20 句。
+              </p>
+            </div>
+            <Switch
+              checked={values.dailyQuoteEnabled}
+              onCheckedChange={(checked) => patch({ dailyQuoteEnabled: checked })}
+              aria-label="每日一句开关"
+            />
+          </div>
+
+          <Field
+            label="手动指定今天这一句"
+            htmlFor="daily-quote-override"
+            hint="填了就压过自动抓的那句，当天一直有效。清空恢复自动。"
+          >
+            <Textarea
+              id="daily-quote-override"
+              rows={2}
+              value={values.dailyQuoteOverride}
+              onChange={(event) => patch({ dailyQuoteOverride: event.target.value })}
+              placeholder="留空 = 自动抓"
+            />
+          </Field>
         </div>
       </Section>
 

@@ -482,6 +482,13 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
     '只上传自己创作、免版权或已获得授权的音乐。商业歌曲请不要公开传播。',
   musicNightTag: '深夜',
   shelfNote: '唱片架上的每一张都是自己放上去的。针落下的声音比音乐还轻。',
+  // 外部数据源：默认都开着（拿不到就降级，不影响任何本地功能）
+  weatherEnabled: true,
+  weatherCity: null,
+  weatherLat: null,
+  weatherLon: null,
+  dailyQuoteEnabled: true,
+  dailyQuoteOverride: null,
 }
 
 /* ==========================================================================
