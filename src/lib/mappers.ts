@@ -65,6 +65,7 @@ export function rowToDiary(row: Tables<'diaries'>, coverUrl: string | null = nul
     coverPath: row.cover_path,
     coverUrl,
     coverPhoto: row.cover_photo,
+    textColor: row.text_color,
     visibility: row.visibility,
     sort: row.sort,
     isPinned: row.is_pinned,

@@ -67,6 +67,18 @@ export const journalSchema = diarySchema.extend({
   password: z.string().max(64, '口令最多 64 个字').optional(),
   /** 封面照片的路径 */
   coverPhoto: z.string().max(400).nullable().optional(),
+  /**
+   * 正文墨水颜色。
+   *
+   * 只接受 #rrggbb —— 这个值最终会进到 style={{ color }} 里，
+   * 在后端就卡死格式，不让任何别的东西流过去。
+   * 数据库那一层还有一道 check 约束（见 0008_journal_ink.sql）。
+   */
+  textColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/, '颜色要写成 #rrggbb')
+    .nullable()
+    .optional(),
 })
 
 export type JournalInput = z.infer<typeof journalSchema>

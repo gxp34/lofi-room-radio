@@ -138,6 +138,8 @@ export type Database = {
           is_pinned: boolean
           /** 口令手帐的 bcrypt 哈希；正文永远不通过 RLS 暴露 */
           password_hash: string | null
+          /** 正文墨水颜色（#rrggbb）；null = 默认墨黑。见 0008_journal_ink.sql */
+          text_color: string | null
         }
         Insert: {
           id?: string
@@ -155,6 +157,7 @@ export type Database = {
           sort?: number
           is_pinned?: boolean
           password_hash?: string | null
+          text_color?: string | null
         }
         Update: {
           id?: string
@@ -172,6 +175,7 @@ export type Database = {
           sort?: number
           is_pinned?: boolean
           password_hash?: string | null
+          text_color?: string | null
         }
         Relationships: []
       }

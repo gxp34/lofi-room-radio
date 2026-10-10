@@ -144,6 +144,26 @@ try {
   await send('Page.navigate', { url: URL_TO_OPEN })
   await sleep(SETTLE_MS)
 
+  // 可选：截图前先点一下某段文字，用来截「点了之后」的状态。
+  //   $env:CLICK_TEXT="开始占卜"; $env:CLICK_WAIT_MS=2500; node scripts/screenshot.mjs ...
+  // （塔罗那种要点一下才出结果的，没有这个就只能截到初始画面）
+  const clickText = process.env.CLICK_TEXT
+  if (clickText) {
+    const clicked = await send('Runtime.evaluate', {
+      expression: `(() => {
+        const target = ${JSON.stringify(clickText)};
+        const nodes = [...document.querySelectorAll('button, a, [role="tab"], summary')];
+        const hit = nodes.find((el) => (el.textContent || '').includes(target));
+        if (!hit) return '没找到：' + target;
+        hit.click();
+        return '已点击：' + target;
+      })()`,
+      returnByValue: true,
+    })
+    console.log(clicked?.result?.value ?? '(点击结果未知)')
+    await sleep(Number(process.env.CLICK_WAIT_MS ?? 1500))
+  }
+
   const measured = await send('Runtime.evaluate', { expression: MEASURE, returnByValue: true })
   console.log(measured?.result?.value ?? '(量不到)')
 

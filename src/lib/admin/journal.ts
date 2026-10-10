@@ -63,6 +63,7 @@ export async function createJournalEntry(
         sort: data.sort,
         is_pinned: data.isPinned,
         cover_photo: data.coverPhoto ?? null,
+        text_color: data.textColor ?? null,
       })
       .select('id')
       .single()
@@ -126,6 +127,7 @@ export async function updateJournalEntry(
         sort: data.sort,
         is_pinned: data.isPinned,
         cover_photo: data.coverPhoto ?? null,
+        text_color: data.textColor ?? null,
         password_hash: data.visibility === 'password' ? undefined : null,
       })
       .eq('id', id)

@@ -43,6 +43,11 @@ const GameMemory = dynamic(
   { ssr: false, loading: GameLoading },
 )
 
+const GameTarot = dynamic(() => import('@/components/games/game-tarot').then((mod) => mod.GameTarot), {
+  ssr: false,
+  loading: GameLoading,
+})
+
 /** slug → 组件。没登记的 slug 会在下面被跳过（数据库里可能有别人加的游戏） */
 const GAME_COMPONENTS: Record<
   string,
@@ -51,6 +56,7 @@ const GAME_COMPONENTS: Record<
   '2048': Game2048,
   snake: GameSnake,
   memory: GameMemory,
+  tarot: GameTarot,
 }
 
 export function GamesClient({ games }: { games: GameDef[] }) {

@@ -20,13 +20,16 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
+  DEFAULT_JOURNAL_INK,
   DIARY_TAGS,
   JOURNAL_IMAGE_OPTIONS,
+  JOURNAL_INK_COLORS,
   JOURNAL_PHOTO_MAX_MB,
   JOURNAL_VISIBILITY_HINT,
   MOOD_OPTIONS,
   STORAGE_BUCKETS,
   WEATHER_OPTIONS,
+  isJournalInk,
 } from '@/lib/constants'
 import {
   addJournalPhotos,
@@ -274,6 +277,10 @@ export function JournalEditor({ mode, entry, onSaved, onCancel }: JournalEditorP
   const [password, setPassword] = React.useState('')
   const [sort, setSort] = React.useState(entry?.sort ?? 0)
   const [isPinned, setIsPinned] = React.useState(entry?.isPinned ?? false)
+  /** 正文墨水颜色。老数据是 null，落到默认墨黑 */
+  const [textColor, setTextColor] = React.useState(
+    isJournalInk(entry?.textColor) ? entry.textColor : DEFAULT_JOURNAL_INK,
+  )
   const [saving, setSaving] = React.useState(false)
 
   const [queue, setQueue] = React.useState<{ name: string; status: string }[]>([])
@@ -321,6 +328,7 @@ export function JournalEditor({ mode, entry, onSaved, onCancel }: JournalEditorP
         sort,
         password: password.trim() || undefined,
         coverPhoto: entry?.coverPhoto ?? null,
+        textColor,
       }
 
       const result =
@@ -500,6 +508,7 @@ export function JournalEditor({ mode, entry, onSaved, onCancel }: JournalEditorP
           isPinned,
           sort,
           coverPhoto: entry?.coverPhoto ?? null,
+          textColor,
         })
         if (!save.ok) toast.error(`照片传好了，但正文没存上：${save.error}`)
       }
@@ -553,6 +562,45 @@ export function JournalEditor({ mode, entry, onSaved, onCancel }: JournalEditorP
         </Field>
 
         <div className="space-y-4">
+          {/* 墨水颜色：就像给这一页换一支笔。
+              选中的那个色块上直接显示一段示例文字，这样能看出"这个颜色写在纸上是什么样"，
+              比只给一块色卡直观得多。 */}
+          <Field label="墨水颜色" hint="就像换一支笔。只影响正文，照片说明不受影响。">
+            <div className="flex flex-wrap gap-1.5">
+              {JOURNAL_INK_COLORS.map((ink) => {
+                const active = textColor === ink.value
+                return (
+                  <button
+                    key={ink.value}
+                    type="button"
+                    aria-label={ink.label}
+                    aria-pressed={active}
+                    title={ink.label}
+                    onClick={() => setTextColor(ink.value)}
+                    className={cn(
+                      'flex items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors',
+                      active
+                        ? 'border-lamp/60 bg-lamp/[0.10]'
+                        : 'border-white/[0.08] bg-white/[0.02] hover:border-white/25',
+                    )}
+                  >
+                    <span
+                      className="h-3.5 w-3.5 shrink-0 rounded-full border border-white/20"
+                      style={{ background: ink.value }}
+                      aria-hidden
+                    />
+                    <span
+                      className="font-display text-[11px]"
+                      style={{ color: ink.value === '#2b2230' ? undefined : ink.value }}
+                    >
+                      {ink.label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+
           {/* 拖拽上传 */}
           <div
             onDragOver={(event) => {

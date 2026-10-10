@@ -230,9 +230,15 @@ for (let fileIndex = 0; fileIndex < files.length; fileIndex++) {
       uncovered.slice(0, 3).forEach((n) => notes.push(`未覆盖: ${n}`))
     }
   }
-  if (inserts.length > 0 && !insertGuard) {
-    notes.push(`${inserts.length} 处 insert 没有 on conflict，重跑会插重复数据`)
-    problems++
+  if (inserts.length > 0) {
+    if (insertGuard) {
+      // 有 on conflict 就没什么可报的，但要**说出来** ——
+      // 之前这里直接落到下面那句「无插入」，明明有 insert 却报告没有，很误导。
+      notes.push(`${inserts.length} 处 insert 都有 on conflict`)
+    } else {
+      notes.push(`${inserts.length} 处 insert 没有 on conflict，重跑会插重复数据`)
+      problems++
+    }
   }
   if (notes.length === 0) notes.push('无策略 / 无插入')
 

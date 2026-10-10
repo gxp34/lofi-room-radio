@@ -65,6 +65,38 @@ export const JOURNAL_VISIBILITY_HINT: Record<string, string> = {
   password: '知道口令的人才能看。正文和照片都不进公开范围，校验通过才由服务端取回来。',
 }
 
+/**
+ * 手帐的墨水颜色。
+ *
+ * 挑选标准有两条，缺一不可：
+ *   1. **在米色纸上读得清** —— 纸是 #f4eee7（很浅），所以只能给深色；
+ *      整站夜色主题那套浅色（paper / lamp / rain）放上去全是隐形的，
+ *      这个坑已经踩过一次（见 rich-text.tsx 开头的说明）。
+ *   2. **互相分得开** —— 八个颜色在两行小色块里要能一眼认出是哪个，
+ *      所以不用八个深浅不同的棕。
+ *
+ * 这些值会进到 style={{ color }} 里，所以服务端和数据库都会再校验一次格式
+ * （见 validators.ts 与 0008_journal_ink.sql 的 check 约束）。
+ */
+export const JOURNAL_INK_COLORS = [
+  { value: '#2b2230', label: '墨黑' },
+  { value: '#2a3f66', label: '深夜蓝' },
+  { value: '#7d3350', label: '暗红' },
+  { value: '#2f5240', label: '墨绿' },
+  { value: '#4a3a68', label: '紫' },
+  { value: '#6b4a2a', label: '棕' },
+  { value: '#8a6a1f', label: '赭金' },
+  { value: '#3a3a3a', label: '铅笔灰' },
+] as const
+
+/** 不选颜色时用的墨黑（和 .paper 卡片原本的正文色一致） */
+export const DEFAULT_JOURNAL_INK = '#2b2230'
+
+/** 判断一个颜色值是不是本子允许的墨水色 */
+export function isJournalInk(value: unknown): value is string {
+  return typeof value === 'string' && JOURNAL_INK_COLORS.some((ink) => ink.value === value)
+}
+
 /* ==========================================================================
    3. 房间物件（首页可点击的东西）
    position 是桌面端全景里的百分比坐标（x 从左到右，y 从上到下），
@@ -323,6 +355,14 @@ export const DEFAULT_GAMES: GameDef[] = [
     enabled: true,
     config: { pairs: 8 },
     sort: 30,
+  },
+  {
+    slug: 'tarot',
+    name: '塔罗',
+    description: '大阿卡纳 22 张。想好问题再抽，别连抽三次。',
+    enabled: true,
+    config: { deck: 'major', allowReverse: true },
+    sort: 40,
   },
 ]
 

@@ -4,6 +4,10 @@ import { notFound } from 'next/navigation'
 import { AchievementManager } from '@/components/admin/achievement-manager'
 import { EventManager } from '@/components/admin/event-manager'
 import { GameManager, type AdminGameCard } from '@/components/admin/game-manager'
+import { GameTarot } from '@/components/games/game-tarot'
+import { TarotPreview } from '@/app/dev/preview/[name]/tarot-preview'
+import { TarotCardFace } from '@/components/games/tarot-cards'
+import { TAROT_CARDS } from '@/lib/tarot'
 import { JournalManager, JournalEditor } from '@/components/admin/journal-manager'
 import { MediaManager } from '@/components/admin/media-manager'
 import { SettingsForm } from '@/components/admin/settings-form'
@@ -37,6 +41,8 @@ const PREVIEWS = [
   { name: 'events', label: '事件池' },
   { name: 'achievements', label: '成就' },
   { name: 'games', label: '小游戏' },
+  { name: 'tarot', label: '塔罗（前台）' },
+  { name: 'tarot-deck', label: '塔罗 · 22 张牌面' },
   { name: 'media', label: '媒体库' },
   { name: 'settings', label: '站点设置' },
 ] as const
@@ -126,6 +132,53 @@ export default function DevPreviewPage({ params }: { params: { name: string } })
         </AdminPage>
       )}
 
+      {/* 塔罗：前台那个游戏本身。放在预览里是因为游戏厅要点击切卡带才看得到，
+          截图脚本点不了 —— 单独一个入口才能直接看到它。 */}
+      {name === 'tarot' && (
+        <AdminPage title="塔罗（前台）" description="预览数据 · 这里是真的可以抽牌的">
+          <TarotPreview />
+        </AdminPage>
+      )}
+
+      {/* 22 张牌面全览：一眼检查每张牌是不是真的画得不一样。
+          塔罗最容易出的问题就是"画到后面几张开始偷懒、长得像了"。 */}
+      {name === 'tarot-deck' && (
+        <AdminPage title="塔罗 · 大阿卡纳 22 张" description="每张独立卡面；逆位只旋转插图，牌名保持正立">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {TAROT_CARDS.map((card) => (
+              <div key={card.id} className="space-y-2">
+                <div className="overflow-hidden rounded-lg">
+                  <TarotCardFace card={card} />
+                </div>
+                <p className="text-center font-display text-[11px] text-dust">
+                  {card.roman} · {card.name}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="mb-3 mt-8 font-display text-sm text-dust">
+            {'// 逆位的样子（插图转 180°，牌名仍正立）'}
+          </h3>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {[0, 8, 13, 16].map((id) => {
+              const card = TAROT_CARDS.find((item) => item.id === id)
+              if (!card) return null
+              return (
+                <div key={`rev-${id}`} className="space-y-2">
+                  <div className="overflow-hidden rounded-lg">
+                    <TarotCardFace card={card} reversed />
+                  </div>
+                  <p className="text-center font-display text-[11px] text-dust">
+                    {card.name} · 逆位
+                  </p>
+                </div>
+              )
+            })}
+          </div>
+        </AdminPage>
+      )}
+
       {name === 'media' && (
         <AdminPage title="媒体库" description="预览数据">
           <MediaManager buckets={MOCK_BUCKETS} notice="预览：其中一条是「Storage 里有、表里没登记」的情况。" />
@@ -187,6 +240,8 @@ const MOCK_JOURNAL: JournalEntry[] = [
     coverPath: null,
     coverUrl: null,
     coverPhoto: 'entries/j1/cover.webp',
+    // 故意用一个非默认色，这样预览页能直接看出墨水颜色生效了
+    textColor: '#2a3f66',
     visibility: 'public',
     sort: 10,
     isPinned: true,
@@ -231,6 +286,8 @@ const MOCK_JOURNAL: JournalEntry[] = [
     coverPath: null,
     coverUrl: null,
     coverPhoto: null,
+    // 这篇留 null，走「默认墨黑」那条分支 —— 两种都要能看到
+    textColor: null,
     visibility: 'draft',
     sort: 20,
     isPinned: false,

@@ -4,7 +4,7 @@ import * as React from 'react'
 import { CloudRain, Hash, Pin } from 'lucide-react'
 
 import { RichText } from '@/components/journal/rich-text'
-import { MOOD_MAP, WEATHER_OPTIONS } from '@/lib/constants'
+import { DEFAULT_JOURNAL_INK, MOOD_MAP, WEATHER_OPTIONS, isJournalInk } from '@/lib/constants'
 import { parseJournalBlocks } from '@/lib/journal'
 import { cn } from '@/lib/utils'
 import type { JournalBlock, JournalEntry, JournalPhoto } from '@/types'
@@ -179,11 +179,17 @@ export function JournalCard({ entry, highlighted, onOpenPhoto }: JournalCardProp
           <div className="mt-3 h-px w-full bg-[#2b2230]/10" />
         </header>
 
-        {/* 图文混排 */}
-        <div className="space-y-5">
+        {/* 图文混排。
+            墨水颜色设在这个容器上，正文段落直接继承 ——
+            rich-text.tsx 里刻意不写死颜色，就是为了让这里能生效
+            （之前写死过，导致浅字排浅纸、正文全隐形）。 */}
+        <div
+          className="space-y-5"
+          style={{ color: isJournalInk(entry.textColor) ? entry.textColor : DEFAULT_JOURNAL_INK }}
+        >
           {blocks.map((block) => {
             if (block.type === 'text') {
-              return <RichText key={block.key} text={block.text} className="text-[#2b2230]" />
+              return <RichText key={block.key} text={block.text} />
             }
 
             const index = indexOfPhoto.get(block.photo.id) ?? 0

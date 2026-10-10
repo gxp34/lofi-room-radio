@@ -41,7 +41,7 @@ export type TriggerType = EventTriggerDb
 export type TrackTag = '深夜' | '雨' | '通勤' | '开心' | '难过' | '随便听听'
 
 /** 小游戏 slug */
-export type GameSlug = '2048' | 'snake' | 'memory'
+export type GameSlug = '2048' | 'snake' | 'memory' | 'tarot'
 
 /* ==========================================================================
    2. 导航与房间物件
@@ -149,6 +149,11 @@ export interface Diary {
   coverUrl?: string | null
   /** 封面照片（手帐用）在存储桶里的路径 */
   coverPhoto: string | null
+  /**
+   * 正文的墨水颜色（#rrggbb）。null = 用默认墨黑。
+   * 只有手帐用得上，但放在 Diary 上 —— 手帐就是日记的扩展，不多立一层类型。
+   */
+  textColor: string | null
   visibility: DiaryVisibility
   sort: number
   isPinned: boolean
